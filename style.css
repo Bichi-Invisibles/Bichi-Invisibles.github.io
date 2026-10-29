@@ -234,4 +234,805 @@ body {
 }/* Fondo de la pantalla de carga */
 .carga {
   background: #F8F2EA;
+}/* ---------- PANTALLA DE NIVELES ---------- */
+.niveles {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--parchment);
+}
+
+/* Fondo animado, igual al de la portada */
+.niveles::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("assets/fondos/fondo-inicio.gif") center / cover no-repeat;
+  opacity: 0.15; /* igual que la portada; súbelo si quieres ver más el fondo en los costados */
+  z-index: 0;
+}
+
+/* Panel grande al frente, con los costados libres */
+.niveles-panel {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 1400px);
+  height: 100%;
+  padding:  90px clamp(16px, 4vw, 48px);
+  background: #F8F2EA;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 44px;
+  overflow-y: auto;
+}
+
+.niveles-titulo {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 2.4rem;
+  color: var(--olive-leaf);
+}
+
+.niveles-lista {
+  width: 100%;
+  max-width: 864px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Rectángulo de cada nivel: fondo transparente, solo contorno */
+.nivel {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  border: 3px solid var(--coffee-bean);
+  border-radius: 20px;
+  font-family: var(--font-body);
+  color: var(--gunmetal);
+  text-align: left;
+}
+
+button.nivel { cursor: pointer; }
+
+/* Al pasar el mouse o seleccionar con teclado: contorno verde y más grueso */
+button.nivel:hover:not(:disabled),
+button.nivel:focus-visible:not(:disabled) {
+  border-color: var(--olive-leaf);
+  border-width: 5px;
+  padding: 14px; /* compensa el borde más grueso para que no se mueva nada */
+}
+
+button.nivel:focus-visible:not(:disabled) {
+  outline: 3px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+/* Imagen del mapa, dentro del rectángulo, a la izquierda */
+.nivel-foto {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(120px, 28vw, 220px);
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--muted-olive);
+}
+
+.nivel-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.nivel-nombre {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.6rem;
+  color: var(--olive-leaf);
+}
+
+.nivel-desc {
+  font-size: 1.1rem;
+  margin-top: 4px;
+}
+
+/* Bloqueado: contorno punteado y mapa apagado */
+.nivel-bloqueado {
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.nivel-bloqueado .nivel-foto img { opacity: 0.55; }
+
+.candado {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  padding: 10px;
+  transform: translate(-50%, -50%);
+  background: #F8F2EA;
+  border-radius: 50%;
+}
+
+/* Próximamente: solo texto, no se puede presionar */
+.nivel-proximamente {
+  justify-content: center;
+  min-height: 100px;
+  border-style: dashed;
+}/* ---------- PARTIDA: BALCÓN ---------- */
+.partida {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  background: var(--parchment);
+}
+
+/* La escena mantiene la proporción 16:9 de tus imágenes (1920x1080) y todo se escala con ella */
+.escena {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.escena-fondo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.5s, transform 0.5s;
+}
+
+/* Fondo desenfocado mientras habla el pololo */
+.escena-fondo.desenfocado {
+  filter: blur(8px);
+  transform: scale(1.04);
+}
+
+/* Elemento que el pololo está explicando */
+.resaltado {
+  opacity: 1 !important;
+  animation: pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes pulso {
+  0%, 100% { box-shadow: 0 0 0 5px var(--jasmine); }
+  50%      { box-shadow: 0 0 0 11px rgba(244, 208, 111, 0.55); }
+}
+
+/* Menú izquierdo */
+.menu-izq {
+  position: absolute;
+  left: 1.5cqw;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+  padding: 1.2cqw;
+  background: #F8F2EA;
+  border: 3px solid var(--coffee-bean);
+  border-radius: 2.2cqw;
+}
+
+.menu-boton {
+  width: clamp(48px, 5.5cqw, 96px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0.8cqw;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 1.6cqw;
+}
+
+.menu-boton img,
+.menu-boton svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Apagado: contorno punteado, no solo color */
+.menu-boton:disabled {
+  border-style: dashed;
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Saldo de BP */
+.saldo {
+  position: absolute;
+  top: 2cqw;
+  right: 2cqw;
+  display: flex;
+  align-items: center;
+  gap: 0.8cqw;
+  padding: 0.6cqw 1.6cqw 0.6cqw 0.8cqw;
+  background: var(--jasmine);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(1.1rem, 2.2cqw, 2.2rem);
+  color: var(--olive-leaf);
+}
+
+.saldo img {
+  height: clamp(28px, 3.2cqw, 60px);
+  width: auto;
+}
+
+/* Barra de objetos */
+.hotbar {
+  position: absolute;
+  left: 50%;
+  bottom: 2cqw;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.8cqw;
+  padding: 0.8cqw;
+  background: #F8F2EA;
+  border: 3px solid var(--coffee-bean);
+  border-radius: 1.8cqw;
+}
+
+.slot {
+  width: clamp(52px, 6cqw, 110px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0.6cqw;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 1.2cqw;
+  cursor: pointer;
+}
+
+.slot img { max-width: 100%; max-height: 100%; }
+.slot:disabled { cursor: not-allowed; }
+
+/* Objeto seleccionado: contorno verde y más grueso */
+.slot.seleccionado {
+  border-color: var(--olive-leaf);
+  border-width: 5px;
+}
+
+/* ---------- GUÍA: POLOLO VERDE ---------- */
+.guia {
+  position: absolute;
+  right: 3cqw;
+  bottom: 0;
+  height: 88%;           /* <-- tamaño del pololo */
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5cqw;
+  animation: aparecer 0.5s ease-out;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Vuelo: sube y baja suavemente */
+.guia-flota {
+  height: 100%;
+  animation: flotar 3s ease-in-out infinite;
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2.2cqw); }
+}
+
+/* Capas: las piezas deben tener el mismo tamaño de lienzo */
+.guia-capas {
+  position: relative;
+  height: 100%;
+  /* Punto donde se unen las alas al cuerpo (X Y, en % del lienzo). Ajústalos a tu dibujo */
+  --origen-ala-izq: 50% 50%;
+  --origen-ala-der: 50% 50%;
+}
+
+.pololo-cuerpo {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: auto;
+  display: block;
+}
+
+.capa {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Alas detrás del cuerpo (si quieres una por delante, cambia su z-index a 3) */
+.ala { z-index: 0; }
+
+.ala-izq {
+  transform-origin: var(--origen-ala-izq);
+  animation: aletear-izq 0.18s ease-in-out infinite alternate;
+}
+
+.ala-der {
+  transform-origin: var(--origen-ala-der);
+  animation: aletear-der 0.18s ease-in-out infinite alternate;
+}
+
+@keyframes aletear-izq {
+  from { transform: rotate(-6deg); }
+  to   { transform: rotate(6deg); }
+}
+
+@keyframes aletear-der {
+  from { transform: rotate(6deg); }
+  to   { transform: rotate(-6deg); }
+}
+
+/* Párpados: aparecen un instante cada pocos segundos */
+.parpados {
+  z-index: 2;
+  opacity: 0;
+  animation: parpadeo 4.5s infinite;
+}
+
+@keyframes parpadeo {
+  0%, 94%, 100% { opacity: 0; }
+  96%, 98%      { opacity: 1; }
+}
+
+/* Globo de diálogo */
+.globo {
+  position: relative;
+  align-self: flex-start;
+  margin-top: 12%;
+  width: 34cqw;
+  min-width: 260px;
+  padding: 1.6cqw 1.8cqw;
+  background: var(--parchment);
+  border: 4px solid var(--coffee-bean);
+  border-radius: 2cqw;
+}
+
+/* Colita del globo, apuntando al pololo */
+.globo::after {
+  content: "";
+  position: absolute;
+  right: -22px;
+  top: 30%;
+  border: 14px solid transparent;
+  border-left-color: var(--coffee-bean);
+}
+
+.globo-nombre {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(1rem, 1.7cqw, 1.5rem);
+  color: var(--olive-leaf);
+}
+
+.globo-texto {
+  min-height: 4.2em;
+  margin-top: 0.4em;
+  font-size: clamp(1.05rem, 1.8cqw, 1.6rem);
+  line-height: 1.4;
+  color: var(--gunmetal);
+}
+
+.globo-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1cqw;
+}
+
+.globo-saltar {
+  min-height: 44px;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--gunmetal);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.globo-siguiente {
+  width: clamp(48px, 4.4cqw, 76px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0.7cqw;
+  background: var(--parchment);
+  border: 3px solid var(--olive-leaf);
+  border-radius: 50%;
+  cursor: pointer;
+  animation: latido 1.6s ease-in-out infinite;
+}
+
+.globo-siguiente img { width: 100%; height: 100%; object-fit: contain; }
+.globo-siguiente:hover { background: var(--muted-olive); }
+
+.globo-saltar:focus-visible,
+.globo-siguiente:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+/* Si la persona prefiere menos movimiento, todo queda quieto */
+@media (prefers-reduced-motion: reduce) {
+  .guia, .guia-flota, .ala, .parpados, .globo-siguiente, .resaltado {
+    animation: none;
+  }
+  .escena-fondo { transition: none; }
+}/* ---------- AJUSTES DE TAMAÑO Y PROPORCIÓN (v2) ---------- */
+
+/* Menos desenfoque */
+.escena-fondo.desenfocado {
+  filter: blur(3px);
+  transform: scale(1.02);
+}
+
+/* La capa del guía cubre toda la escena; el pololo y el globo se ubican por separado */
+.guia {
+  inset: 0;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.guia-flota {
+  position: absolute;
+  right: 3cqw;
+  bottom: 0;
+  height: 62%;   /* <-- tamaño del pololo */
+}
+
+/* Punto donde las alas se unen al cuerpo (X Y, en % del lienzo) */
+.guia-capas {
+  --origen-ala-izq: 34% 62%;
+  --origen-ala-der: 66% 62%;
+}
+
+/* Globo de diálogo: siempre dentro de la pantalla */
+.globo {
+  position: absolute;
+  left: 13cqw;
+  bottom: 16cqw;
+  margin-top: 0;
+  width: 32cqw;
+  min-width: 0;
+  padding: 1.2cqw 1.5cqw;
+  pointer-events: auto;
+}
+
+.globo-nombre { font-size: clamp(0.9rem, 1.4cqw, 1.3rem); }
+.globo-texto  { font-size: clamp(0.95rem, 1.5cqw, 1.4rem); min-height: 3.6em; }
+.globo-saltar { font-size: 0.9rem; }
+.globo-siguiente { width: clamp(44px, 3.4cqw, 64px); }
+
+/* Interfaz más proporcionada */
+.saldo {
+  top: 1.5cqw;
+  right: 1.5cqw;
+  font-size: clamp(1rem, 1.7cqw, 1.8rem);
+}
+.saldo img { height: clamp(24px, 2.4cqw, 48px); }
+
+.menu-boton { width: clamp(44px, 4.2cqw, 80px); }
+.slot       { width: clamp(46px, 4.6cqw, 88px); }/* ---------- TRANSPARENCIA DE MENÚ E INVENTARIO ---------- */
+
+/* Cajas contenedoras */
+.menu-izq,
+.hotbar {
+  background: rgba(248, 242, 234, 0.55);
+}
+
+/* Cada espacio (botones del menú y casillas del inventario) */
+.menu-boton,
+.slot {
+  background: rgba(247, 245, 240, 0.5);
+}
+
+/* Los botones apagados se ven un poco más tenues, pero sin perder los íconos */
+.menu-boton:disabled {
+  opacity: 0.9;
+}/* ---------- AJUSTES (v3) ---------- */
+
+/* Pololo un poco más pequeño */
+.guia-flota {
+  height: 54%;
+}
+
+/* Párpados apagados hasta volver a exportar la imagen con el lienzo completo */
+.parpados {
+  display: none;
+}/* ---------- AJUSTES (v4) ---------- */
+
+/* Sin la colita café del globo de texto */
+.globo::after {
+  display: none;
+}
+
+/* Al no haber botón de saltar, la flecha queda a la derecha */
+.globo-acciones {
+  justify-content: flex-end;
+}/* ---------- AJUSTES (v5): pololo con las piezas corregidas ---------- */
+
+/* Párpados activos otra vez */
+.parpados {
+  display: block;
+}
+
+/* Punto de giro de cada ala: la punta delgada, junto al cuerpo (X Y, en % del lienzo) */
+.guia-capas {
+  --origen-ala-izq: 35.3% 40.3%;
+  --origen-ala-der: 65.1% 39.3%;
+}/* ---------- LIMPIEZA CON LA ESPONJA ---------- */
+
+.fondo-limpio,
+.fondo-sucio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fondo-limpio { object-fit: cover; }
+
+/* La suciedad se desvanece al terminar de limpiar */
+.fondo-sucio {
+  transition: opacity 1.2s ease;
+  touch-action: none;
+}
+
+.fondo-sucio.desvanecer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Con la esponja seleccionada, la esponja reemplaza al cursor */
+.escena.modo-esponja,
+.escena.modo-esponja * {
+  cursor: none;
+}
+
+.esponja-cursor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9cqw;
+  height: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 20;
+  transition: transform 0.1s;
+}
+
+/* Mientras se frota, la esponja se aprieta un poquito */
+.esponja-cursor.frotando {
+  transform: translate(-50%, -50%) scale(0.9) rotate(-8deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fondo-sucio, .esponja-cursor { transition: none; }
+}/* ---------- TIENDA ---------- */
+
+/* Botones del menú que ya se pueden usar */
+.menu-boton:not(:disabled) { cursor: pointer; }
+.menu-boton:not(:disabled):hover { border-color: var(--olive-leaf); }
+.menu-boton:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.tienda {
+  position: absolute;
+  left: 9.5cqw;
+  top: 2.5cqw;
+  width: 48cqw;
+  max-height: 43cqw;
+  overflow-y: auto;
+  padding: 1.2cqw 1.5cqw 1.2cqw;
+  background: rgba(248, 242, 234, 0.94);
+  border: 4px solid var(--coffee-bean);
+  border-radius: 2cqw;
+  animation: aparecer 0.3s ease-out;
+}
+
+.tienda-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tienda-titulo {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(1.3rem, 2.4cqw, 2.6rem);
+  color: var(--olive-leaf);
+}
+
+.tienda-cerrar {
+  width: clamp(40px, 3.2cqw, 60px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0.6cqw;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.tienda-cerrar:hover { border-color: var(--olive-leaf); }
+.tienda-cerrar:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+.tienda-cerrar svg { width: 100%; height: 100%; }
+
+.tienda-seccion {
+  margin-top: 0.6cqw;
+  padding: 0.6cqw 0.8cqw 0.8cqw;
+  border-radius: 1.4cqw;
+}
+
+.tienda-subtitulo {
+  margin-bottom: 0.5cqw;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: clamp(1rem, 1.6cqw, 1.7rem);
+  color: var(--olive-leaf);
+}
+
+.tienda-lista {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.8cqw;
+}
+
+/* Tarjeta de cada producto */
+.producto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3cqw;
+  padding: 0.6cqw;
+  text-align: center;
+  background: rgba(247, 245, 240, 0.7);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 1.2cqw;
+}
+
+.producto.no-disponible {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.producto-foto {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(141, 173, 78, 0.3);
+  border-radius: 0.8cqw;
+}
+
+.producto-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.producto-nombre {
+  min-height: 2.3em;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: clamp(0.8rem, 1.1cqw, 1.2rem);
+  line-height: 1.15;
+  color: var(--gunmetal);
+}
+
+.producto-precio {
+  display: flex;
+  align-items: center;
+  gap: 0.3cqw;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(0.9rem, 1.3cqw, 1.4rem);
+  color: var(--olive-leaf);
+}
+
+.producto-precio img {
+  height: clamp(16px, 1.6cqw, 30px);
+  width: auto;
+}
+
+.producto-comprar {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.3cqw;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(0.8rem, 1.1cqw, 1.2rem);
+  color: var(--parchment);
+  background: var(--olive-leaf);
+  border: 2px solid var(--olive-leaf);
+  border-radius: 0.9cqw;
+  cursor: pointer;
+}
+
+.producto-comprar:hover:not(:disabled) {
+  background: var(--muted-olive);
+  color: var(--gunmetal);
+}
+
+.producto-comprar:focus-visible {
+  outline: 3px solid var(--jasmine);
+  outline-offset: 2px;
+}
+
+/* Apagado: contorno punteado, no solo color */
+.producto-comprar:disabled {
+  background: transparent;
+  color: var(--gunmetal);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.tienda-aviso {
+  min-height: 1.4em;
+  margin-top: 0.4cqw;
+  font-weight: 700;
+  font-size: clamp(0.9rem, 1.2cqw, 1.3rem);
+  color: var(--coffee-bean);
+}
+
+/* Con la tienda abierta, el globo del pololo pasa arriba de su cabeza */
+.escena.tienda-abierta .globo {
+  left: auto;
+  right: 3cqw;
+  bottom: 34cqw;
+  width: 34cqw;
+}
+
+/* Cantidad de objetos en cada casilla del inventario */
+.slot { position: relative; }
+
+.slot-cantidad {
+  position: absolute;
+  right: 0.2cqw;
+  bottom: 0.1cqw;
+  min-width: 1.8cqw;
+  padding: 0 0.3cqw;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(0.8rem, 1.3cqw, 1.4rem);
+  text-align: center;
+  color: var(--olive-leaf);
+  background: var(--jasmine);
+  border: 2px solid var(--coffee-bean);
+  border-radius: 999px;
 }
