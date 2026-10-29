@@ -1,0 +1,237 @@
+:root {
+  --parchment: #F7F5F0;
+  --jasmine: #F4D06F;
+  --muted-olive: #8DAD4E;
+  --olive-leaf: #36600C;
+  --coffee-bean: #6F513A;
+  --gunmetal: #2D312E;
+
+  --font-heading: 'Fredoka', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--parchment);
+  color: var(--gunmetal);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+/* Hace que el atributo "hidden" siempre esconda el elemento */
+[hidden] { display: none !important; }
+
+/* ---------- PORTADA ---------- */
+.portada {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  height: 100vh;
+  padding: 24px;
+  background: var(--parchment);
+}
+
+.portada-logo {
+  width: min(80vw, 400px);
+  height: auto;
+}
+
+/* Botón play: círculo con un triángulo hecho con CSS */
+.btn-play {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 4px solid var(--coffee-bean);
+  background: var(--olive-leaf);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  animation: latido 1.6s ease-in-out infinite;
+}
+
+.btn-play::before {
+  content: "";
+  border-style: solid;
+  border-width: 22px 0 22px 36px;
+  border-color: transparent transparent transparent var(--parchment);
+  margin-left: 6px;
+}
+
+.btn-play:hover { background: var(--muted-olive); }
+.btn-play:hover::before { border-left-color: var(--gunmetal); }
+.btn-play:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 4px; }
+
+@keyframes latido {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
+}
+
+/* Si la persona prefiere menos movimiento, el botón queda quieto */
+@media (prefers-reduced-motion: reduce) {
+  .btn-play { animation: none; }
+}
+
+/* ---------- JUEGO ---------- */
+.game {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+}
+
+/* Barra superior */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 24px;
+  background: var(--parchment);
+  border-bottom: 3px solid var(--coffee-bean);
+}
+
+.logo { height: 48px; }
+
+.coins {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--olive-leaf);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--jasmine);
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
+.coins-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--coffee-bean);
+}
+
+.topbar-buttons { display: flex; gap: 10px; }
+
+/* Botones */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 10px 20px;
+  min-height: 44px;
+  border: 2px solid var(--olive-leaf);
+  border-radius: 14px;
+  background: var(--olive-leaf);
+  color: var(--parchment);
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) { background: var(--muted-olive); color: var(--gunmetal); }
+.btn:focus-visible { outline: 3px solid var(--jasmine); outline-offset: 2px; }
+
+/* Deshabilitado: borde punteado, no solo color */
+.btn:disabled {
+  background: var(--parchment);
+  color: var(--gunmetal);
+  border-style: dashed;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Escenario provisional */
+.stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--parchment);
+}
+
+.building {
+  position: absolute;
+  bottom: 30%;
+  background: var(--muted-olive);
+  border-radius: 8px 8px 0 0;
+  opacity: 0.55;
+}
+.b1 { left: 8%;  width: 14%; height: 45%; }
+.b2 { left: 30%; width: 18%; height: 60%; }
+.b3 { left: 62%; width: 22%; height: 50%; }
+
+.railing {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 30%;
+  height: 12px;
+  background: var(--coffee-bean);
+}
+
+.floor {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 30%;
+  background: var(--coffee-bean);
+  opacity: 0.85;
+}
+
+/* Barra de herramientas */
+.toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--parchment);
+  border-top: 3px solid var(--coffee-bean);
+}/* Fondo animado de la portada */
+.portada {
+  background: var(--parchment) url("assets/fondos/fondo-inicio.gif") center / cover no-repeat;
+}/* Fondo animado de la portada, con opacidad ajustable */
+.portada {
+  position: relative;
+  background: var(--parchment);
+}
+
+.portada::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("assets/fondos/fondo-inicio.gif") center / cover no-repeat;
+  opacity: 0.15; /* <-- este número es la opacidad */
+  z-index: 0;
+}
+
+/* Logo y botón quedan por encima del fondo */
+.portada > * {
+  position: relative;
+  z-index: 1;
+}/* Pantalla de carga */
+.carga {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100vh;
+  padding: 24px;
+  background: var(--parchment);
+}
+
+.carga-icono {
+  width: 1200px;
+  max-width: 70vw;
+  height: auto;
+}
+
+.carga-texto {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.4rem;
+  color: var(--olive-leaf);
+}/* Fondo de la pantalla de carga */
+.carga {
+  background: #F8F2EA;
+}

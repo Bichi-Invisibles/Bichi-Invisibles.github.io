@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BICHI: Invisibles en la ciudad</title>
+
+  <!-- Tipografías oficiales -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Portada -->
+  <section class="portada" id="portada">
+    <img class="portada-logo" src="assets/logo-bichi.png" alt="BICHI: Invisibles en la ciudad">
+    <button class="btn-play" id="btn-jugar" aria-label="Jugar"></button>
+  </section>
+
+    <!-- Pantalla de carga -->
+  <section class="carga" id="carga" hidden>
+    <img class="carga-icono" src="assets/iconos/icono-carga.gif" alt="">
+    <p class="carga-texto" role="status">Cargando…</p>
+  </section></section><!-- Juego (escondido hasta que se presiona play) -->
+  <div class="game" hidden>
+
+    <!-- Barra superior -->
+    <header class="topbar">
+      <img class="logo" src="assets/logo-bichi.png" alt="BICHI">
+
+      <div class="coins">
+        <span class="coins-dot"></span>
+        <span id="coins-amount">100</span> BP
+      </div>
+
+      <div class="topbar-buttons">
+        <button class="btn" disabled>Tienda</button>
+        <button class="btn" disabled>Inventario</button>
+        <button class="btn" disabled>Pausa</button>
+      </div>
+    </header>
+
+    <!-- Escenario: la terraza (provisional) -->
+    <main class="stage">
+      <div class="building b1"></div>
+      <div class="building b2"></div>
+      <div class="building b3"></div>
+      <div class="railing"></div>
+      <div class="floor"></div>
+    </main>
+
+    <!-- Barra de herramientas -->
+    <footer class="toolbar">
+      <button class="btn" disabled>Plantas</button>
+      <button class="btn" disabled>Macetas</button>
+      <button class="btn" disabled>Compost</button>
+      <button class="btn" disabled>Regadera</button>
+      <button class="btn" disabled>Decoración</button>
+    </footer>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
