@@ -14,6 +14,164 @@
 </head>
 <body>
 
+  <!-- Pantalla de bienvenida: descripción del juego y aceptación, por encima de la portada -->
+  <section class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="intro-titulo">
+    <div class="intro-panel">
+      <h1 class="intro-titulo" id="intro-titulo">¡Bienvenido a Bichi!</h1>
+
+      <!-- Texto de bienvenida: cada <h2> es un subtítulo, cada <p> un párrafo y cada <li> un punto de la lista -->
+      <div class="intro-texto" id="intro-texto" tabindex="0" aria-label="Descripción del juego. Desplázate hasta el final para aceptar.">
+        <p>¿Alguna vez te has preguntado qué pequeños seres viven en tu terraza o jardín?</p>
+        <p>En Bichi descubrirás el fascinante mundo de los insectos que habitan nuestros espacios cotidianos. Tu misión será transformar distintos espacios en un entorno lleno de vida, incorporando plantas, cuidando el ambiente y creando refugios para atraer diferentes especies.</p>
+        <p>¡Explora, experimenta y descubre todo lo que puede suceder cuando la naturaleza encuentra un lugar para crecer!</p>
+
+        <h2>¿Qué aprenderás jugando?</h2>
+        <ul>
+          <li><strong>Conocerás nuevos insectos:</strong> descubrirás diferentes especies y sus características.</li>
+          <li><strong>Comprenderás su importancia:</strong> aprenderás qué funciones cumplen.</li>
+          <li><strong>Explorarás la biodiversidad:</strong> observarás cómo las condiciones del entorno influyen en los insectos que pueden habitarlo.</li>
+          <li><strong>Experimentarás con la naturaleza:</strong> descubrirás cómo las plantas, el agua y los refugios pueden favorecer la presencia de distintas especies.</li>
+          <li><strong>Aprenderás a cuidar tu entorno:</strong> reconocerás que pequeñas acciones pueden contribuir a proteger la biodiversidad urbana.</li>
+        </ul>
+
+        <h2>Información del juego</h2>
+        <ul>
+          <li><strong>Edad recomendada:</strong> desde los 8 años.</li>
+          <li><strong>Plataforma recomendada:</strong> computador (PC).</li>
+          <li><strong>Tipo de experiencia:</strong> individual, con posibilidad de compartir descubrimientos en familia.</li>
+        </ul>
+
+        <p>No necesitas saber de insectos para comenzar. ¡La aventura consiste justamente en descubrirlos!</p>
+        <p class="intro-cierre">¿Estás listo para hacer visible lo invisible?<br>¡Comencemos!</p>
+
+        <label class="intro-acepto" for="intro-acepto">
+          <input type="checkbox" id="intro-acepto">
+          <span>He leído esta descripción y acepto.</span>
+        </label>
+      </div>
+
+      <div class="intro-pie">
+        <p class="intro-ayuda" id="intro-ayuda">Llega hasta el final del texto y marca «acepto» para continuar.</p>
+        <button class="intro-continuar" id="intro-continuar" disabled aria-label="Continuar al juego">
+          <img src="assets/iconos/icono-flecha.png" alt="">
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Botón de configuración (visible en todas las pantallas, después de aceptar la bienvenida) -->
+  <button class="btn-config" id="btn-config" aria-label="Configuración" aria-haspopup="dialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="#6F513A">
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(45 12 12)"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(90 12 12)"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(135 12 12)"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(180 12 12)"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(225 12 12)"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(270 12 12)"/>
+        <rect x="10.4" y="1" width="3.2" height="5" rx="1" transform="rotate(315 12 12)"/>
+      </g>
+      <circle cx="12" cy="12" r="7" fill="#8DAD4E" stroke="#6F513A" stroke-width="2"/>
+      <circle cx="12" cy="12" r="2.8" fill="#F7F5F0" stroke="#6F513A" stroke-width="1.6"/>
+    </svg>
+  </button>
+
+  <!-- Menú de configuración -->
+  <section class="config" id="config" role="dialog" aria-modal="true" aria-labelledby="config-titulo" hidden>
+    <div class="config-panel">
+      <div class="config-cabecera">
+        <h2 class="config-titulo" id="config-titulo">Configuración</h2>
+        <button class="config-cerrar" id="config-cerrar" aria-label="Cerrar configuración">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#6F513A" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="config-fila">
+        <label class="config-etiqueta" for="config-volumen">Música</label>
+        <div class="config-control">
+          <input type="range" id="config-volumen" min="0" max="100" step="1" value="60">
+          <output class="config-valor" id="config-volumen-valor" for="config-volumen">60 %</output>
+        </div>
+      </div>
+
+      <div class="config-fila">
+        <label class="config-etiqueta" for="config-aleteo">Aleteo de los insectos</label>
+        <div class="config-control">
+          <input type="range" id="config-aleteo" min="0" max="100" step="1" value="60">
+          <output class="config-valor" id="config-aleteo-valor" for="config-aleteo">60 %</output>
+        </div>
+      </div>
+
+      <div class="config-fila">
+        <label class="config-etiqueta" for="config-botones">Efectos de sonido</label>
+        <div class="config-control">
+          <input type="range" id="config-botones" min="0" max="100" step="1" value="60">
+          <output class="config-valor" id="config-botones-valor" for="config-botones">60 %</output>
+        </div>
+      </div>
+
+      <button class="config-boton" id="config-musica">Desactivar música</button>
+
+      <p class="config-creditos">Música: «Spring Colors», de Takeshi Abo.</p>
+    </div>
+  </section>
+
+  <!-- Enciclopedia de insectos -->
+  <section class="enciclo" id="enciclo" role="dialog" aria-modal="true" aria-labelledby="enciclo-titulo-sr" hidden>
+    <div class="libro" id="libro">
+      <img class="libro-fondo" id="libro-fondo" src="assets/enciclopedia/libro-abierto.png" alt="" draggable="false">
+      <img class="libro-tapa" id="libro-tapa" src="assets/enciclopedia/libro-cerrado.png" alt="" draggable="false">
+
+      <h2 class="solo-lectores" id="enciclo-titulo-sr">Enciclopedia de insectos</h2>
+      <p class="solo-lectores" id="enciclo-estado" aria-live="polite"></p>
+
+      <!-- Dos planas: izquierda y derecha -->
+      <div class="plana plana-izq" id="plana-izq">
+        <h3 class="plana-titulo" id="titulo-izq"></h3>
+        <ul class="casillas" id="casillas-izq"></ul>
+      </div>
+      <div class="plana plana-der" id="plana-der">
+        <ul class="casillas" id="casillas-der"></ul>
+      </div>
+
+      <!-- Flechas para pasar la página (quedan dentro del libro, abajo de cada plana) -->
+      <button class="libro-flecha flecha-ant" id="enciclo-anterior" data-sin-clic aria-label="Página anterior">
+        <img src="assets/iconos/icono-flecha.png" alt="">
+      </button>
+      <button class="libro-flecha flecha-sig" id="enciclo-siguiente" data-sin-clic aria-label="Página siguiente">
+        <img src="assets/iconos/icono-flecha.png" alt="">
+      </button>
+
+      <!-- Ficha de un insecto: aparece al frente cuando se hace clic en uno descubierto -->
+      <div class="ficha-capa" id="ficha-capa" hidden>
+        <article class="ficha" id="ficha" role="dialog" aria-modal="true" aria-labelledby="ficha-titulo">
+          <div class="ficha-izq">
+            <div class="ficha-foto"><div class="ficha-dibujo" id="ficha-dibujo"></div></div>
+            <div class="ficha-tiempos" id="ficha-tiempos"></div>
+          </div>
+          <div class="ficha-texto" id="ficha-texto" tabindex="0"></div>
+          <button class="ficha-cerrar" id="ficha-cerrar" aria-label="Cerrar información">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#6F513A" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </article>
+      </div>
+
+      <!-- Última plana: ocupa las dos páginas -->
+      <p class="libro-proximamente" id="enciclo-proximamente" hidden>Próximamente</p>
+
+      <button class="enciclo-cerrar" id="enciclo-cerrar" aria-label="Cerrar enciclopedia">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#6F513A" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
   <!-- Portada -->
   <section class="portada" id="portada">
     <img class="portada-logo" src="assets/logo-bichi.png" alt="BICHI: Invisibles en la ciudad">
@@ -25,41 +183,57 @@
     <div class="niveles-panel">
       <h1 class="niveles-titulo">Niveles</h1>
 
-      <div class="niveles-lista">
-
-        <!-- Balcón: desbloqueado -->
-        <button class="nivel" id="btn-nivel-balcon">
-          <div class="nivel-foto">
-            <img src="assets/niveles/nivel-balcon.png" alt="Mapa del balcón">
-          </div>
-          <div class="nivel-info">
-            <h2 class="nivel-nombre">Balcón</h2>
-            <p class="nivel-desc">Aquí empieza tu aventura.</p>
-          </div>
+      <!-- Carrusel: el nivel de adelante es el activo; arrastra hacia los lados para cambiar -->
+      <div class="carrusel-zona">
+        <button class="carrusel-flecha carrusel-anterior" id="nivel-anterior" aria-label="Nivel anterior">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="#36600C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
 
-        <!-- Patio: bloqueado -->
-        <button class="nivel nivel-bloqueado" disabled aria-label="Patio, bloqueado">
-          <div class="nivel-foto">
-            <img src="assets/niveles/nivel-patio.png" alt="">
-            <svg class="candado" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="#6F513A" stroke-width="2.5" stroke-linecap="round"/>
-              <rect x="5" y="10" width="14" height="11" rx="3" fill="#6F513A"/>
-              <circle cx="12" cy="15.5" r="1.6" fill="#F4D06F"/>
-            </svg>
-          </div>
-          <div class="nivel-info">
-            <h2 class="nivel-nombre">Patio</h2>
-            <p class="nivel-desc">Bloqueado</p>
-          </div>
-        </button>
+        <div class="carrusel" id="carrusel" role="group" aria-label="Niveles del juego">
+          <!-- Balcón: desbloqueado -->
+          <button class="nivel-tarjeta" id="btn-nivel-balcon" aria-label="Balcón. Partimos pequeño, pero seguro.">
+            <span class="tarjeta-foto">
+              <img src="assets/niveles/nivel-balcon.png" alt="Mapa del balcón" draggable="false">
+            </span>
+            <span class="tarjeta-info">
+              <span class="tarjeta-nombre">Balcón</span>
+              <span class="tarjeta-desc">Partimos pequeño, pero seguro.</span>
+            </span>
+          </button>
 
-        <!-- Próximamente -->
-        <div class="nivel nivel-proximamente">
-          <h2 class="nivel-nombre">Próximamente</h2>
+          <!-- Patio: bloqueado -->
+          <button class="nivel-tarjeta nivel-bloqueado" id="btn-nivel-patio" aria-disabled="true" aria-label="Patio, bloqueado">
+            <span class="tarjeta-foto">
+              <img src="assets/niveles/nivel-patio.png" alt="" draggable="false">
+              <svg class="candado" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="#6F513A" stroke-width="2.5" stroke-linecap="round"/>
+                <rect x="5" y="10" width="14" height="11" rx="3" fill="#6F513A"/>
+                <circle cx="12" cy="15.5" r="1.6" fill="#F4D06F"/>
+              </svg>
+            </span>
+            <span class="tarjeta-info">
+              <span class="tarjeta-nombre">Patio</span>
+              <span class="tarjeta-desc">Bloqueado</span>
+            </span>
+          </button>
+
+          <!-- Próximamente -->
+          <button class="nivel-tarjeta nivel-bloqueado nivel-proximamente" id="btn-nivel-proximamente" aria-disabled="true" aria-label="Próximamente">
+            <span class="tarjeta-foto tarjeta-vacia">
+              <span class="tarjeta-nombre">Próximamente</span>
+            </span>
+            <span class="tarjeta-info">
+              <span class="tarjeta-desc">Nuevos lugares por descubrir</span>
+            </span>
+          </button>
         </div>
 
+        <button class="carrusel-flecha carrusel-siguiente" id="nivel-siguiente" aria-label="Nivel siguiente">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="#36600C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
+
+      <p class="carrusel-ayuda" id="carrusel-ayuda" role="status">Mantén el clic presionado y arrastra hacia un lado para cambiar de nivel.</p>
     </div>
   </section>
 
@@ -79,12 +253,38 @@
         <canvas class="fondo-sucio" id="fondo-sucio" role="img" aria-label="Balcón en mal estado, con telarañas y macetas rotas"></canvas>
       </div>
 
+      <!-- Maceta de la derecha: aquí se planta y crece la manzanilla -->
+      <img class="planta" id="planta" src="assets/plantas/manzanilla-pequena.png" alt="" hidden>
+      <button class="zona-maceta" id="zona-maceta" disabled aria-label="Maceta de la derecha"></button>
+      <div class="barra-crecimiento" id="barra-crecimiento" role="progressbar" aria-label="Crecimiento de la manzanilla" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+        <div class="barra-relleno" id="barra-relleno"></div>
+      </div>
+      <img class="icono-gota" id="icono-gota" src="assets/plantas/icono-gota.png" alt="La planta tiene sed" hidden>
+
+      <!-- Maceta de la izquierda: aquí se planta la rosa -->
+      <img class="planta" id="planta-izq" src="assets/plantas/rosa-mediana.png" alt="" hidden>
+      <button class="zona-maceta" id="zona-maceta-izq" disabled aria-label="Maceta de la izquierda"></button>
+      <div class="barra-crecimiento" id="barra-crecimiento-izq" role="progressbar" aria-label="Crecimiento de la rosa" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+        <div class="barra-relleno" id="barra-relleno-izq"></div>
+      </div>
+      <img class="icono-gota" id="icono-gota-izq" src="assets/plantas/icono-gota.png" alt="La rosa tiene sed" hidden>
+
+      <!-- Regadera sobre la mesa de la derecha -->
+      <button class="zona-regadera" id="zona-regadera" disabled hidden aria-label="Tomar la regadera"></button>
+
+      <!-- Pololo verde pequeñito, volando por la terraza cuando termina el tutorial -->
+      <div class="pololo-vuelo" id="pololo-vuelo" hidden>
+        <div class="vuelo-voltea" id="vuelo-voltea">
+          <img src="assets/pololo/pololo-vuelo.png" alt="Pololo verde volando">
+        </div>
+      </div>
+
       <!-- Menú izquierdo (todavía sin funciones: botones apagados) -->
                  <nav class="menu-izq" id="menu-izq" aria-label="Menú del juego">
         <button class="menu-boton" id="menu-tienda" disabled aria-label="Tienda (próximamente)">
           <img src="assets/iconos/icono-tienda.png" alt="">
         </button>
-        <button class="menu-boton" id="menu-enciclopedia" disabled aria-label="Enciclopedia (próximamente)">
+        <button class="menu-boton" id="menu-enciclopedia" disabled aria-label="Enciclopedia (se activa al terminar el tutorial)">
           <img src="assets/iconos/icono-enciclopedia.png" alt="">
         </button>
         <button class="menu-boton" id="menu-hotel" disabled aria-label="Hotel de insectos (próximamente)">
@@ -130,6 +330,9 @@
       </section>
       <!-- Esponja que sigue al mouse cuando está seleccionada -->
       <img class="esponja-cursor" id="esponja-cursor" src="assets/objetos/esponja.webp" alt="" hidden>
+      <!-- Semilla que se arrastra y regadera que sigue al mouse -->
+      <img class="semilla-arrastre" id="semilla-arrastre" src="assets/tienda/semillas-manzanilla.png" alt="" hidden>
+      <img class="regadera-cursor" id="regadera-cursor" src="assets/plantas/regadera.png" alt="" hidden>
       <div class="guia" id="guia" hidden>
         <div class="globo" role="status">
           <p class="globo-nombre">Pololo verde</p>

@@ -1036,3 +1036,1222 @@ button.nivel:focus-visible:not(:disabled) {
   border: 2px solid var(--coffee-bean);
   border-radius: 999px;
 }
+
+/* ---------- PLANTAR Y REGAR (etapas D y E) ---------- */
+
+/* Planta en la maceta de la derecha (ocupa el lugar de la maceta del dibujo) */
+.planta {
+  position: absolute;
+  left: 76.9cqw;
+  top: 10.37cqw;
+  width: 18.41cqw;
+  height: auto;
+  pointer-events: none;
+}
+
+/* Pequeño "pop" cada vez que la planta cambia de etapa */
+.planta.cambia {
+  animation: pop-planta 0.5s ease-out;
+  transform-origin: 50% 95%;
+}
+
+@keyframes pop-planta {
+  0%   { transform: scale(0.93); }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* Zonas sensibles: encima de la maceta y de la regadera (invisibles, pero se pueden marcar) */
+.zona-maceta,
+.zona-regadera {
+  position: absolute;
+  background: transparent;
+  border: none;
+  border-radius: 1.8cqw;
+}
+
+.zona-maceta {
+  left: 81.8cqw;
+  top: 21.2cqw;
+  width: 9.3cqw;
+  height: 9.1cqw;
+}
+
+.zona-regadera {
+  left: 92cqw;
+  top: 13.6cqw;
+  width: 8cqw;
+  height: 10cqw;
+}
+
+.zona-regadera:not(:disabled) { cursor: pointer; }
+.zona-maceta:focus-visible,
+.zona-regadera:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+/* La maceta se marca cuando la semilla (o la regadera) está encima */
+.zona-maceta.sobre {
+  box-shadow: 0 0 0 6px var(--olive-leaf);
+  background: rgba(141, 173, 78, 0.25);
+}
+
+/* Barra de crecimiento, debajo de la maceta */
+.barra-crecimiento {
+  position: absolute;
+  left: 81.5cqw;
+  top: 31.8cqw;
+  width: 10cqw;
+  height: 1.3cqw;
+  background: rgba(247, 245, 240, 0.85);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barra-relleno {
+  width: 0;
+  height: 100%;
+  background: var(--muted-olive);
+  transition: width 0.15s linear;
+}
+
+/* Cuando la planta tiene sed, la barra se detiene y cambia de color (y la gota avisa) */
+.barra-crecimiento.pausada .barra-relleno {
+  background: var(--jasmine);
+}
+
+/* Gota: la planta necesita agua */
+.icono-gota {
+  position: absolute;
+  left: 84.8cqw;
+  top: 9.5cqw;
+  width: 3.4cqw;
+  height: auto;
+  pointer-events: none;
+  animation: gota-rebota 1.2s ease-in-out infinite;
+}
+
+@keyframes gota-rebota {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-0.8cqw); }
+}
+
+/* Semilla que se arrastra y regadera que sigue al mouse */
+.semilla-arrastre,
+.regadera-cursor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.semilla-arrastre { width: 4.2cqw; }
+.regadera-cursor  { width: 9cqw; }
+
+/* Mientras se arrastra o se usa un objeto, ese objeto reemplaza al cursor */
+.escena.modo-objeto,
+.escena.modo-objeto * {
+  cursor: none;
+}
+
+/* La casilla de la semilla se ve "vacía" mientras la llevas en la mano */
+.slot.arrastrando { opacity: 0.45; }
+
+/* Las casillas de objetos que ya se pueden usar */
+.slot-dinamico:not(:disabled) { cursor: grab; }
+.slot-dinamico:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planta.cambia, .icono-gota { animation: none; }
+  .barra-relleno { transition: none; }
+}
+
+/* La barra de objetos aparece y desaparece suavemente */
+.hotbar { transition: opacity 0.5s; }
+.hotbar.saliendo { opacity: 0; }
+
+/* La regadera se selecciona con un clic (no se arrastra) */
+#slot-regadera:not(:disabled) { cursor: pointer; }
+
+/* Lo que el pololo explica queda por delante de él, aunque se le cruce */
+.barra-crecimiento.resaltado,
+.icono-gota.resaltado,
+.zona-regadera.resaltado,
+.zona-maceta.resaltado {
+  z-index: 5;
+}
+
+/* Regadera en la mano: un poco más chica */
+.regadera-cursor { width: 7cqw; }
+
+/* Texto de respaldo si falta la imagen de un objeto del inventario */
+.slot-etiqueta {
+  font-weight: 700;
+  font-size: clamp(0.6rem, 1cqw, 1rem);
+  text-align: center;
+  line-height: 1.1;
+  color: var(--gunmetal);
+}
+
+
+/* ---------- POLOLO PEQUEÑITO VOLANDO ---------- */
+.pololo-vuelo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6.5cqw;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s;
+  will-change: transform;
+}
+
+.pololo-vuelo.visible { opacity: 1; }
+
+.vuelo-voltea {
+  transition: transform 0.35s;
+}
+
+.vuelo-voltea.izquierda { transform: scaleX(-1); }
+
+.vuelo-voltea img {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: zumbar 0.7s ease-in-out infinite alternate;
+}
+
+/* Sube y baja un poquito, como si aleteara en el aire */
+@keyframes zumbar {
+  from { transform: translateY(-0.35cqw) rotate(-2deg); }
+  to   { transform: translateY(0.35cqw) rotate(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vuelo-voltea img { animation: none; }
+}
+
+
+/* ---------- MACETA DE LA IZQUIERDA (rosa) ---------- */
+#zona-maceta-izq {
+  left: 12.56cqw;
+  top: 21.2cqw;
+  width: 9.1cqw;
+  height: 9.1cqw;
+}
+
+#barra-crecimiento-izq { left: 12.08cqw; }
+
+#icono-gota-izq {
+  left: 15.4cqw;
+  top: 8cqw;
+}
+
+/* ---------- PANTALLA DE BIENVENIDA (antes de la portada) ---------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(45, 49, 46, 0.6);
+  transition: opacity 0.4s;
+  animation: aparecer 0.4s ease-out;
+}
+
+.intro.saliendo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-panel {
+  width: min(92vw, 760px);
+  max-height: min(92vh, 820px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px clamp(16px, 3vw, 32px);
+  background: var(--parchment);
+  border: 4px solid var(--coffee-bean);
+  border-radius: 24px;
+}
+
+.intro-titulo {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  text-align: center;
+  color: var(--olive-leaf);
+}
+
+/* Caja con el texto: tiene su propio scroll */
+.intro-texto {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+  border: 3px solid var(--coffee-bean);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.35);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--gunmetal);
+}
+
+.intro-texto:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.intro-texto h2 {
+  margin: 18px 0 6px;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.3rem;
+  color: var(--olive-leaf);
+}
+
+.intro-texto h2:first-child { margin-top: 0; }
+
+.intro-texto p + p { margin-top: 10px; }
+
+.intro-texto ul {
+  padding-left: 1.3em;
+}
+
+.intro-texto li + li { margin-top: 6px; }
+
+/* Cuadrado de "acepto", al final del texto */
+.intro-acepto {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  padding: 14px 16px;
+  border: 3px dashed var(--coffee-bean);
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.intro-acepto:has(input:checked) {
+  border-style: solid;
+  border-color: var(--olive-leaf);
+}
+
+.intro-acepto input {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  accent-color: var(--olive-leaf);
+  cursor: pointer;
+}
+
+.intro-acepto input:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+/* Pie: ayuda a la izquierda y la hojita con flecha a la derecha */
+.intro-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.intro-ayuda {
+  font-size: 0.95rem;
+  color: var(--gunmetal);
+}
+
+.intro-continuar {
+  flex: none;
+  width: clamp(56px, 6vw, 76px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  background: var(--parchment);
+  border: 3px solid var(--olive-leaf);
+  border-radius: 50%;
+  cursor: pointer;
+  animation: latido 1.6s ease-in-out infinite;
+}
+
+.intro-continuar img { width: 100%; height: 100%; object-fit: contain; }
+.intro-continuar:hover:not(:disabled) { background: var(--muted-olive); }
+.intro-continuar:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+/* Apagado hasta aceptar: contorno punteado, sin latido */
+.intro-continuar:disabled {
+  border-color: var(--coffee-bean);
+  border-style: dashed;
+  opacity: 0.55;
+  cursor: not-allowed;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro { animation: none; transition: none; }
+  .intro-continuar { animation: none; }
+}
+
+/* ---------- NIVELES EN CARRUSEL ---------- */
+.niveles-panel {
+  justify-content: center;
+  gap: 24px;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.carrusel-zona {
+  --ancho-tarjeta: min(560px, 44vw, 62vh);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.carrusel {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: calc(var(--ancho-tarjeta) * 0.625 + 132px);
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.carrusel.arrastrando { cursor: grabbing; }
+
+/* Cada nivel es una tarjeta apilada en el centro; el script la mueve y la achica según su posición */
+.nivel-tarjeta {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  width: var(--ancho-tarjeta);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 20px;
+  box-shadow: 0 10px 22px rgba(45, 49, 46, 0.18);
+  font-family: var(--font-body);
+  color: var(--gunmetal);
+  text-align: left;
+  cursor: inherit;
+  will-change: transform;
+}
+
+.nivel-tarjeta:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+/* La tarjeta de adelante, si se puede jugar, se marca en verde al pasar el mouse */
+.nivel-tarjeta[aria-current="true"]:not(.nivel-bloqueado):hover {
+  border-color: var(--olive-leaf);
+}
+
+.tarjeta-foto {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--muted-olive);
+}
+
+.tarjeta-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.tarjeta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tarjeta-nombre {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+  color: var(--olive-leaf);
+}
+
+.tarjeta-desc {
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+}
+
+/* Bloqueado: contorno punteado y mapa apagado */
+.nivel-bloqueado { border-style: dashed; }
+.nivel-bloqueado .tarjeta-foto img { opacity: 0.55; }
+
+.tarjeta-vacia {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 3px dashed var(--coffee-bean);
+}
+
+/* Flechas laterales: otra forma de cambiar de nivel, sin arrastrar */
+.carrusel-flecha {
+  flex: none;
+  width: clamp(40px, 4vw, 56px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background: var(--parchment);
+  border: 3px solid var(--olive-leaf);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.carrusel-flecha svg { width: 100%; height: 100%; }
+.carrusel-flecha:hover:not(:disabled) { background: var(--muted-olive); }
+.carrusel-flecha:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.carrusel-flecha:disabled {
+  border-color: var(--coffee-bean);
+  border-style: dashed;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.carrusel-ayuda {
+  min-height: 1.5em;
+  font-weight: 700;
+  text-align: center;
+  color: var(--coffee-bean);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nivel-tarjeta { transition: none !important; }
+}
+
+/* Frase final de la bienvenida */
+.intro-cierre {
+  margin-top: 14px;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.2rem;
+  text-align: center;
+  color: var(--olive-leaf);
+}
+
+.intro-texto ul + p { margin-top: 14px; }
+
+
+/* ---------- CONFIGURACIÓN (volumen y música) ---------- */
+.btn-config {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 90;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  background: rgba(247, 245, 240, 0.85);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.btn-config svg { width: 100%; height: 100%; }
+.btn-config:hover { border-color: var(--olive-leaf); }
+.btn-config:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.config {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(45, 49, 46, 0.55);
+  animation: aparecer 0.25s ease-out;
+}
+
+.config-panel {
+  width: min(92vw, 460px);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 24px clamp(18px, 4vw, 32px) 26px;
+  background: var(--parchment);
+  border: 4px solid var(--coffee-bean);
+  border-radius: 24px;
+}
+
+.config-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.config-titulo {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.9rem;
+  color: var(--olive-leaf);
+}
+
+.config-cerrar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.config-cerrar svg { width: 100%; height: 100%; }
+.config-cerrar:hover { border-color: var(--olive-leaf); }
+.config-cerrar:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.config-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-etiqueta {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--olive-leaf);
+}
+
+.config-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.config-control input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  accent-color: var(--olive-leaf);
+  cursor: pointer;
+}
+
+.config-control input[type="range"]:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.config-valor {
+  min-width: 3.6em;
+  text-align: right;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--olive-leaf);
+}
+
+/* Botón de la música: verde cuando está activada; con contorno punteado cuando está apagada */
+.config-boton {
+  min-height: 52px;
+  padding: 10px 20px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--parchment);
+  background: var(--olive-leaf);
+  border: 3px solid var(--olive-leaf);
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.config-boton:hover { background: var(--muted-olive); color: var(--gunmetal); }
+.config-boton:focus-visible {
+  outline: 4px solid var(--jasmine);
+  outline-offset: 3px;
+}
+
+.config-boton.apagada {
+  color: var(--gunmetal);
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--coffee-bean);
+}
+
+.config-creditos {
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--coffee-bean);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .config { animation: none; }
+}
+
+
+/* +N BP que sube desde la maceta al regar */
+.bp-gana {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 0.4cqw 1.2cqw;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 2.2cqw;
+  color: var(--coffee-bean);
+  background: var(--jasmine);
+  border-radius: 2cqw;
+  pointer-events: none;
+  animation: bp-sube 1.6s ease-out forwards;
+}
+
+@keyframes bp-sube {
+  0%   { opacity: 0; transform: translate(-50%, 1cqw); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -5cqw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-gana { animation: bp-sube-quieto 1.6s linear forwards; }
+  @keyframes bp-sube-quieto { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+}
+
+
+/* ---------- ENCICLOPEDIA DE INSECTOS ---------- */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.enciclo {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(45, 49, 46, 0.6);
+  animation: aparecer 0.25s ease-out;
+}
+
+/* El libro mantiene la proporción de su imagen (1447 x 928) y todo se mide en cqw */
+.libro {
+  position: relative;
+  width: min(96vw, calc((100vh - 32px) * 1.559));
+  aspect-ratio: 1447 / 928;
+  container-type: inline-size;
+}
+
+.libro-fondo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  pointer-events: none;
+}
+
+.plana {
+  position: absolute;
+  top: 14cqw;
+  width: 32cqw;
+  height: 34cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6cqw;
+}
+
+.plana-izq { left: 14.6cqw; }
+.plana-der { left: 55.2cqw; }
+
+.plana-titulo {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 3.6cqw;
+  line-height: 1.1;
+  color: var(--olive-leaf);
+}
+
+.casillas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5cqw;
+}
+
+.casilla {
+  width: 9.6cqw;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 4.6cqw;
+  color: var(--coffee-bean);
+  background: rgba(111, 81, 58, 0.08);
+  border: 0.3cqw dashed var(--coffee-bean);
+  border-radius: 1.6cqw;
+}
+
+.libro-proximamente {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22cqw;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 5.4cqw;
+  color: var(--coffee-bean);
+}
+
+.libro-flecha {
+  position: absolute;
+  top: 44cqw;
+  width: 6.4cqw;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 1cqw;
+  background: var(--parchment);
+  border: 0.35cqw solid var(--olive-leaf);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.libro-flecha img { width: 100%; height: 100%; object-fit: contain; }
+.flecha-ant { left: 9.5cqw; top: 46.5cqw; }
+.flecha-ant img { transform: scaleX(-1); }
+.flecha-sig { left: 82.5cqw; top: 45cqw; }
+.libro-flecha:hover { background: var(--muted-olive); }
+.libro-flecha:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 3px; }
+
+.enciclo-cerrar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: clamp(40px, 5cqw, 56px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.enciclo-cerrar svg { width: 100%; height: 100%; }
+.enciclo-cerrar:hover { border-color: var(--olive-leaf); }
+.enciclo-cerrar:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 3px; }
+
+
+/* Libro cerrado: la tapa va centrada y la flecha queda a su lado */
+.libro-tapa {
+  position: absolute;
+  top: 3%;
+  left: 50%;
+  height: 94%;
+  transform: translateX(-50%);
+  user-select: none;
+  pointer-events: none;
+  animation: aparecer 0.25s ease-out;
+}
+
+.libro-tapa[hidden],
+.libro-fondo[hidden] { display: none; }
+
+.libro.cerrado .flecha-sig { left: 83cqw; top: 40cqw; }
+
+
+/* Página derecha: deja libre el hueco del título para que las casillas queden alineadas */
+.plana-der { padding-top: 5.6cqw; box-sizing: border-box; }
+
+/* Casilla con un insecto ya descubierto */
+.casilla.descubierta {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2cqw;
+  padding: 0.6cqw;
+  background: rgba(244, 208, 111, 0.35);
+  border: 0.3cqw solid var(--olive-leaf);
+}
+
+.casilla.descubierta img {
+  width: 100%;
+  height: 6cqw;
+  object-fit: contain;
+}
+
+.casilla.descubierta span {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.35cqw;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--olive-leaf);
+}
+
+.casilla.nuevo { animation: casilla-pop 0.6s ease-out backwards; }
+
+@keyframes casilla-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* El botón de la enciclopedia tintinea cuando hay un insecto nuevo */
+.menu-boton.tintinea {
+  border-color: var(--olive-leaf);
+  animation: tintineo 1.4s ease-in-out infinite;
+}
+
+@keyframes tintineo {
+  0%, 100% { transform: rotate(0); box-shadow: 0 0 0 0 rgba(244, 208, 111, 0); }
+  10% { transform: rotate(-9deg); }
+  20% { transform: rotate(9deg); }
+  30% { transform: rotate(-6deg); }
+  40% { transform: rotate(5deg); }
+  50% { transform: rotate(0); box-shadow: 0 0 0 0.9cqw rgba(244, 208, 111, 0.85); }
+  80% { box-shadow: 0 0 0 1.6cqw rgba(244, 208, 111, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* sin movimiento: queda un contorno amarillo fijo */
+  .menu-boton.tintinea { animation: none; box-shadow: 0 0 0 0.7cqw var(--jasmine); }
+  .casilla.nuevo { animation: none; }
+}
+
+
+/* Revelación del insecto nuevo: aparece grande en el centro del libro */
+.revelacion {
+  position: absolute;
+  left: 50%;
+  top: 27cqw;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  width: 30cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6cqw;
+  padding: 1.6cqw 1.6cqw 2cqw;
+  box-sizing: border-box;
+  background: #FFF4DC;
+  border: 0.35cqw solid var(--olive-leaf);
+  border-radius: 3cqw;
+  box-shadow: 0 1.2cqw 3cqw rgba(45, 49, 46, 0.35);
+  transition: background-color 0.35s, border-color 0.35s, box-shadow 0.35s;
+  pointer-events: none;
+}
+
+/* Al viajar hacia su casilla, el recuadro desaparece y queda solo el dibujo */
+.revelacion.viajando {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.revelacion img {
+  width: 24cqw;
+  filter: drop-shadow(0 0.8cqw 1cqw rgba(111, 81, 58, 0.35));
+  animation: revelacion-entra 0.7s ease-out backwards;
+}
+
+.revelacion-etiqueta,
+.revelacion-nombre {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-align: center;
+  transition: opacity 0.3s;
+}
+
+.revelacion-etiqueta {
+  padding: 0.5cqw 2cqw;
+  font-size: 2.6cqw;
+  color: var(--coffee-bean);
+  background: var(--jasmine);
+  border-radius: 2cqw;
+}
+
+.revelacion-nombre { font-size: 3.2cqw; color: var(--olive-leaf); }
+.revelacion.viajando .revelacion-etiqueta,
+.revelacion.viajando .revelacion-nombre { opacity: 0; }
+
+@keyframes revelacion-entra {
+  0%   { transform: scale(0.3); opacity: 0; }
+  65%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .revelacion img { animation: none; }
+}
+
+
+/* La casilla de un insecto descubierto es un botón */
+.casilla-boton {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2cqw;
+  padding: 0.6cqw;
+  background: transparent;
+  border: 0;
+  border-radius: 1.3cqw;
+  cursor: pointer;
+}
+
+.casilla-boton:hover { background: rgba(244, 208, 111, 0.45); }
+.casilla-boton:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 2px; }
+
+.casilla.descubierta img {
+  width: 100%;
+  height: 6cqw;
+  object-fit: contain;
+}
+
+/* Ficha del insecto: un "carnet" al frente del libro */
+.ficha-capa {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  animation: aparecer 0.2s ease-out;
+}
+
+.ficha-capa[hidden] { display: none; }
+
+.ficha {
+  position: relative;
+  width: 90cqw;
+  height: 56cqw;
+  display: grid;
+  grid-template-columns: 31% 1fr;
+  gap: 2.4cqw;
+  padding: 2.6cqw 3cqw;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #FFF4DC 0%, #F4E9C8 55%, #E4EBC9 100%);
+  border: 0.4cqw solid var(--olive-leaf);
+  border-radius: 2.6cqw;
+  box-shadow: 0 1.4cqw 3.5cqw rgba(45, 49, 46, 0.45);
+}
+
+.ficha-izq {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqw;
+  min-height: 0;
+}
+
+/* "Foto de carnet" */
+.ficha-foto {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 1cqw;
+  background: radial-gradient(circle at 50% 40%, #FFFBEF 0%, #DDE8C2 100%);
+  border: 0.3cqw solid var(--olive-leaf);
+  border-radius: 1.6cqw;
+}
+
+.ficha-dibujo {
+  width: 100%;
+  aspect-ratio: 1394 / 980;
+}
+
+.ficha-dibujo img:not(.capa):not(.pololo-cuerpo) { width: 100%; }
+
+/* El pololo animado se ajusta al recuadro de la foto */
+.ficha-dibujo .guia-flota {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.ficha-dibujo .guia-capas { height: 100%; width: 100%; }
+.ficha-dibujo .pololo-cuerpo { width: 100%; height: 100%; object-fit: contain; }
+
+.ficha-tiempos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqw;
+}
+
+/* Datos del carnet */
+.ficha-texto {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1cqw;
+  padding-right: 0.8cqw;
+  font-family: var(--font-body);
+  color: var(--gunmetal);
+}
+
+.ficha-texto:focus-visible { outline: 3px solid var(--jasmine); outline-offset: 2px; }
+
+.carnet-cabecera {
+  display: flex;
+  flex-direction: column;
+  padding-right: max(44px, 5cqw);   /* deja libre la X de cerrar */
+  padding-bottom: 0.6cqw;
+  border-bottom: 0.25cqw solid var(--olive-leaf);
+}
+
+.carnet-titulo {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: max(18px, 2.5cqw);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--olive-leaf);
+}
+
+.carnet-sub {
+  font-size: max(11px, 1.2cqw);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--coffee-bean);
+}
+
+.campo { display: flex; flex-direction: column; gap: 0.1cqw; min-width: 0; }
+
+.campo-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.6cqw;
+}
+
+.campo-etiqueta {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: max(11px, 1.15cqw);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--olive-leaf);
+}
+
+.campo-valor {
+  font-size: max(14px, 1.9cqw);
+  line-height: 1.25;
+}
+
+.campo-nombre .campo-valor {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: max(20px, 2.9cqw);
+  line-height: 1.1;
+  color: var(--coffee-bean);
+}
+
+.campo-descripcion .campo-valor { font-size: max(13px, 1.65cqw); line-height: 1.35; }
+
+/* Los tiempos de debajo de la foto */
+.ficha-tiempos .campo {
+  padding: 0.8cqw 1.2cqw;
+  background: rgba(255, 251, 239, 0.8);
+  border: 0.25cqw solid var(--muted-olive);
+  border-radius: 1.2cqw;
+}
+
+.ficha-tiempos .campo-valor { font-size: max(13px, 1.6cqw); }
+
+/* Tabla macho / hembra */
+.sexo-tabla {
+  width: 100%;
+  margin-top: 0.3cqw;
+  border-collapse: collapse;
+  font-size: max(12px, 1.5cqw);
+}
+
+.sexo-tabla th,
+.sexo-tabla td {
+  padding: 0.35cqw 0.8cqw;
+  text-align: left;
+  border-bottom: 0.15cqw solid rgba(111, 81, 58, 0.25);
+}
+
+.sexo-tabla th { font-weight: 700; color: var(--coffee-bean); }
+.sexo-tabla tr:first-child th { font-family: var(--font-heading); color: var(--olive-leaf); }
+
+.ficha-cerrar {
+  position: absolute;
+  top: 1.2cqw;
+  right: 1.2cqw;
+  width: clamp(36px, 4cqw, 52px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ficha-cerrar svg { width: 100%; height: 100%; }
+.ficha-cerrar:hover { border-color: var(--olive-leaf); }
+.ficha-cerrar:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 3px; }
