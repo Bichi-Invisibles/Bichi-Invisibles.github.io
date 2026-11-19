@@ -11,14 +11,42 @@ const estado = {
   regaderaUsable: false,
   regaderaSeleccionada: false,
   tutorialTerminado: false,   // pasa a true cuando florece la manzanilla y termina el tutorial
-  rosaComprada: false
+  rosaComprada: false,
+  puedeComprarManzanilla: false,  // el botón de la manzanilla se abre solo cuando el pololo lo indica
+  manzanillaComprada: false,
+  semillaSeleccionada: null,      // id de la semilla que el jugador tiene "en la mano"
+  especiesPlantadas: [],          // para las misiones
+  misionActual: 0,
+  macetasColocadas: 0,            // macetas nuevas ya puestas en el piso
+  tiendaAmpliada: false           // pasa a true cuando se descubre al abejorro en el diario: se desbloquean macetas, tierra y pasiflora
 };
+
+// Lugares del piso donde se pueden poner macetas nuevas (x e y = punto de la base de la maceta, en cqw)
+const LUGARES_MACETAS = [
+  { x: 30,   y: 37.5 },
+  { x: 43.5, y: 37.5 },
+  { x: 57,   y: 37.5 },
+  { x: 70.5, y: 37.5 }
+];
 
 function mostrarMonedas() {
   document.getElementById("saldo-cantidad").textContent = estado.monedas;
 }
 
 mostrarMonedas();
+
+// El saldo "salta" y muestra un +N flotando, para que se note que sumó
+function animarSaldo(cantidad) {
+  const saldo = document.getElementById("saldo");
+  saldo.classList.remove("saldo-suma");
+  void saldo.offsetWidth;
+  saldo.classList.add("saldo-suma");
+  const aviso = document.createElement("span");
+  aviso.className = "saldo-aviso";
+  aviso.textContent = "+" + cantidad;
+  saldo.appendChild(aviso);
+  setTimeout(() => aviso.remove(), 1600);
+}
 
 // ---------- Productos de la tienda ----------
 // Para agregar un producto, copia una línea y cambia sus datos.
@@ -27,20 +55,28 @@ mostrarMonedas();
 //  - etiquetaNo: (opcional) texto del botón cuando no se puede comprar
 //  - Los precios son PROVISORIOS, excepto el de la manzanilla (2 BP)
 const PRODUCTOS = [
-  { id: "saco-tierra",         nombre: "Saco de tierra",       precio: 3,  tipo: "herramienta", imagen: "assets/tienda/saco-tierra.png",         disponible: false },
-  { id: "maceta-terracota",    nombre: "Maceta de terracota",  precio: 4,  tipo: "herramienta", imagen: "assets/tienda/maceta-terracota.png",    disponible: false },
+  { id: "saco-tierra",         nombre: "Saco de tierra",       precio: 3,  tipo: "herramienta", imagen: "assets/tienda/saco-tierra.png",         disponible: false,
+    // 1 saco llena 1 maceta; se desbloquea al descubrir al abejorro
+    disponibleSi: () => estado.tiendaAmpliada },
+  { id: "maceta-terracota",    nombre: "Maceta de terracota",  precio: 4,  tipo: "herramienta", imagen: "assets/tienda/maceta-terracota.png",    disponible: false,
+    // Solo se pueden comprar tantas como lugares libres hay en el piso (LUGARES_MACETAS)
+    disponibleSi: () => estado.tiendaAmpliada && (estado.macetasColocadas + (estado.inventario["maceta-terracota"] || 0)) < LUGARES_MACETAS.length,
+    etiquetaNo: () => (estado.tiendaAmpliada ? "Sin espacio" : "Pronto") },
   { id: "maceta-ceramica",     nombre: "Maceta de cerámica",   precio: 6,  tipo: "herramienta", imagen: "assets/tienda/maceta-ceramica.png",     disponible: false },
   { id: "jardinera",           nombre: "Jardinera",            precio: 8,  tipo: "herramienta", imagen: "assets/tienda/jardinera.png",           disponible: false },
   { id: "jardinera-madera",    nombre: "Jardinera de madera",  precio: 10, tipo: "herramienta", imagen: "assets/tienda/jardinera-madera.png",    disponible: false },
   { id: "semillas-manzanilla", nombre: "Manzanilla",           precio: 2,  tipo: "semilla",     imagen: "assets/tienda/semillas-manzanilla.png", disponible: false,
-    // Solo se compra durante el tutorial; después queda plantada en su maceta
-    disponibleSi: () => !estado.tutorialTerminado, etiquetaNo: () => "Plantada" },
+    // Solo se puede comprar cuando el pololo lo indica, y una sola vez
+    disponibleSi: () => estado.puedeComprarManzanilla,
+    etiquetaNo: () => (estado.manzanillaComprada ? "Comprada" : "Comprar") },
   { id: "semillas-rosa",       nombre: "Rosa",                 precio: 4,  tipo: "semilla",     imagen: "assets/tienda/semillas-rosa.png",       disponible: false,
     // Se desbloquea al terminar el tutorial y se compra una sola vez (hay una sola maceta libre)
     disponibleSi: () => estado.tutorialTerminado && !estado.rosaComprada,
     etiquetaNo: () => (estado.rosaComprada ? "Ya la tienes" : "Pronto") },
   { id: "semillas-calle-calle",nombre: "Calle-calle chilena",  precio: 5,  tipo: "semilla",     imagen: "assets/tienda/semillas-calle-calle.png",disponible: false },
-  { id: "semillas-pasiflora",  nombre: "Pasiflora",            precio: 6,  tipo: "semilla",     imagen: "assets/tienda/semillas-pasiflora.png",  disponible: false },
+  { id: "semillas-pasiflora",  nombre: "Pasiflora",            precio: 6,  tipo: "semilla",     imagen: "assets/tienda/semillas-pasiflora.png",  disponible: false,
+    // Se desbloquea junto con las macetas y la tierra (al descubrir al abejorro)
+    disponibleSi: () => estado.tiendaAmpliada },
   { id: "semillas-lirio",      nombre: "Lirio chileno",        precio: 8,  tipo: "semilla",     imagen: "assets/tienda/semillas-lirio.png",      disponible: false }
 ];
 
@@ -72,6 +108,10 @@ const RECURSOS_JUEGO = [
   "assets/iconos/icono-bichipeso.png",
   "assets/iconos/icono-flecha.png",
   "assets/pololo/pololo-vuelo.png",
+  "assets/abejorro/abejorro-vuelo.png",
+  "assets/abejorro/abejorro-cuerpo.png",
+  "assets/abejorro/abejorro-alas-izq.png",
+  "assets/abejorro/abejorro-alas-der.png",
   "assets/plantas/rosa-mediana.png",
   "assets/plantas/rosa-sed.png",
   "assets/plantas/rosa-flor.png",
@@ -81,6 +121,11 @@ const RECURSOS_JUEGO = [
   "assets/plantas/rosa-marchita.png",
   "assets/plantas/manzanilla-marchita.png",
   "assets/plantas/maceta-vacia.png",
+  "assets/plantas/maceta-sin-tierra.png",
+  "assets/plantas/pasiflora-mediana.png",
+  "assets/plantas/pasiflora-sed.png",
+  "assets/plantas/pasiflora-flor.png",
+  "assets/plantas/pasiflora-marchita.png",
   "assets/plantas/manzanilla-pequena.png",
   "assets/plantas/manzanilla-mediana.png",
   "assets/plantas/manzanilla-mediana-sed.png",
@@ -168,6 +213,22 @@ casillaAcepto.addEventListener("change", () => {
   botonContinuar.disabled = !casillaAcepto.checked;
 });
 
+// Mensaje temporal junto al engranaje de configuración
+const avisoConfig = document.getElementById("aviso-config");
+let timerAviso = null;
+
+function mostrarAvisoConfig() {
+  avisoConfig.hidden = false;
+  avisoConfig.classList.remove("saliendo");
+  timerAviso = setTimeout(ocultarAvisoConfig, 9000);
+}
+
+function ocultarAvisoConfig() {
+  clearTimeout(timerAviso);
+  avisoConfig.classList.add("saliendo");
+  setTimeout(() => { avisoConfig.hidden = true; }, 500);
+}
+
 botonContinuar.addEventListener("click", () => {
   if (!casillaAcepto.checked) return;
   intro.classList.add("saliendo");
@@ -176,6 +237,7 @@ botonContinuar.addEventListener("click", () => {
     portada.inert = false;
     document.getElementById("btn-config").inert = false;
     botonJugar.focus();
+    mostrarAvisoConfig();
   }, 400);
 
   // Los navegadores solo dejan sonar música después de un clic: este es ese clic
@@ -233,10 +295,26 @@ document.addEventListener("click", (evento) => {
   const boton = evento.target.closest("button, [role='button']");
   if (!boton || boton.disabled || boton.hasAttribute("data-sin-clic")) return;
   if (ajustes.volumenBotones <= 0) return;
+  // Objetos del inventario, regadera de la mesa y macetas: suenan con el "plop"
+  if (boton.matches(".slot, .zona-regadera")) {
+    sonarPlop();
+    return;
+  }
   sonidoClic.volume = ajustes.volumenBotones;
   sonidoClic.currentTime = 0;
   sonidoClic.play().catch(() => {});
 });
+
+// "Plop" al tomar o guardar objetos del inventario y al enderezar las macetas (se controla con "Efectos de sonido")
+const sonidoPlop = new Audio("assets/sonidos/plop.mp3");
+sonidoPlop.preload = "auto";
+
+function sonarPlop() {
+  if (ajustes.volumenBotones <= 0) return;
+  sonidoPlop.volume = ajustes.volumenBotones;
+  sonidoPlop.currentTime = 0;
+  sonidoPlop.play().catch(() => {});
+}
 
 // Brillos que suenan cuando el balcón pasa de sucio a limpio
 const sonidoBrillos = new Audio("assets/sonidos/brillos-limpieza.mp3");
@@ -253,12 +331,28 @@ function sonarPagina() {
   sonidoPagina.play().catch(() => {});
 }
 
+// Agua de la regadera (se controla con "Efectos de sonido")
+const sonidoRegar = new Audio("assets/sonidos/regar.mp3");
+sonidoRegar.preload = "auto";
+
+function sonarRegar() {
+  if (ajustes.volumenBotones <= 0) return;
+  sonidoRegar.volume = ajustes.volumenBotones;
+  sonidoRegar.currentTime = 0;
+  sonidoRegar.play().catch(() => {});
+}
+
 function sonarBrillos() {
   if (ajustes.volumenBotones <= 0) return;
   sonidoBrillos.volume = ajustes.volumenBotones;
   sonidoBrillos.currentTime = 0;
   sonidoBrillos.play().catch(() => {});
 }
+
+// Zumbido del abejorro colorado (suena desde que se planta la rosa)
+const sonidoAbejorro = new Audio("assets/sonidos/vuelo-abejorro.mp3");
+sonidoAbejorro.loop = true;
+sonidoAbejorro.preload = "auto";
 
 let sonidoPermitido = false;   // pasa a true con el primer clic del jugador
 
@@ -273,7 +367,9 @@ function iniciarSonido() {
 }
 
 // El zumbido del pololo se oye mientras está en pantalla y se apaga al salir por un borde
+let poloEnGuia = false;   // true mientras el pololo grande habla (el pequeñito del fondo se esconde)
 function actualizarSonidoVuelo(x) {
+  if (poloEnGuia) x = null;
   if (!sonidoPermitido || x === null) {
     if (!sonidoVuelo.paused) sonidoVuelo.pause();
     return;
@@ -295,6 +391,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     musicaFondo.pause();
     sonidoVuelo.pause();
+    sonidoAbejorro.pause();
   } else if (sonidoPermitido && ajustes.musicaActiva) {
     musicaFondo.play().catch(() => {});
   }
@@ -329,6 +426,7 @@ function dibujarConfig() {
 let focoAntesDeConfig = null;
 
 function abrirConfig() {
+  if (!avisoConfig.hidden) ocultarAvisoConfig();
   focoAntesDeConfig = document.activeElement;
   panelConfig.hidden = false;
   rangoVolumen.focus();
@@ -390,35 +488,67 @@ const INSECTOS = {
   pololo: {
     nombre: "Pololo verde",
     imagen: "assets/pololo/pololo-registro.png",
+    foto: "assets/fotos/pololo-real.jpg",
     animado: true,   // en la ficha se muestra con sus alas aleteando
     // Datos del "carnet". Los tiempos vienen de fuentes (INIA y otras); la duración exacta de la vida
     // del adulto no aparece en ellas, por eso se muestra la época en que se le ve volar.
     ficha: {
       nombre: "Pololo verde",
+      nombreCientifico: "Hylamorpha elegans",
       otroNombre: "San Juan verde",
       nacionalidad: "Chilena",
-      zona: "Del Biobío a Los Lagos",
+      // Fuente: INIA (vive de Coquimbo a Los Lagos, donde crecen los bosques de Nothofagus/robles).
+      zona: "De Coquimbo a Los Lagos",
+      // Regiones que se iluminan en el mapa (los nombres son los de los archivos assets/mapa/region-NOMBRE.png)
+      regiones: ["coquimbo", "valparaiso", "metropolitana", "ohiggins", "maule", "nuble", "biobio", "araucania", "losrios", "loslagos"],
       descripcion: "¡Un pequeño escarabajo de color verde brillante! De adulto come hojas; de larva vive bajo tierra y come raíces. Algunas aves también se lo comen.",
       tiempos: [
-        { etiqueta: "Como larva", valor: "8 a 9 meses bajo tierra" },
-        { etiqueta: "Como escarabajo", valor: "Se le ve volar de octubre a febrero" }
+        { etiqueta: "Como larva", valor: "8 a 9 meses bajo tierra" }
       ],
       sexo: {
         columnas: ["Macho", "Hembra"],
         filas: [
-          { etiqueta: "Tibias delanteras", valores: ["Verdes", "Café"] },
-          { etiqueta: "Uñas de las patas", valores: ["Una más larga", "Todas iguales"] },
-          { etiqueta: "Primer tarsito", valores: ["Más corto", "Más largo"] },
-          { etiqueta: "Tamaño", valores: ["Un poco menor", "Un poco mayor"] }
+          { etiqueta: "Tibias delanteras", valores: ["Verdes", "Café"],
+            partes: [ { x: 38.8, y: 54.5, w: 5.5, h: 25, giro: 12 }, { x: 61.2, y: 54.5, w: 5.5, h: 25, giro: -12 } ] },
+          { etiqueta: "Uñas de las patas", valores: ["Una más larga", "Todas iguales"],
+            partes: [ { x: 36.7, y: 68, w: 5, h: 8 }, { x: 38.3, y: 78, w: 5, h: 8 }, { x: 41.7, y: 88.5, w: 5, h: 8 },
+                      { x: 63.3, y: 68, w: 5, h: 8 }, { x: 61.7, y: 78, w: 5, h: 8 }, { x: 58.3, y: 88.5, w: 5, h: 8 } ] },
+          { etiqueta: "Primer tarsito", valores: ["Más corto", "Más largo"],
+            partes: [ { x: 36.4, y: 62.5, w: 4, h: 8 }, { x: 63.6, y: 62.5, w: 4, h: 8 } ] },
+          { etiqueta: "Tamaño", valores: ["Un poco menor", "Un poco mayor"],
+            partes: [ { x: 50, y: 53, w: 42, h: 80, redondo: true } ] }
         ]
       }
     }
   }
 };
 
+INSECTOS.abejorro = {
+  nombre: "Abejorro colorado",
+  imagen: "assets/abejorro/abejorro-registro.png",
+  foto: "assets/fotos/abejorro-real.jpg",
+    animado: "abejorro",   // en la ficha se muestra con sus alas aleteando
+  ficha: {
+    nombre: "Abejorro colorado",
+    nombreCientifico: "Bombus dahlbomii",
+    otroNombre: "Abejorro gigante",
+    nacionalidad: "Chilena y argentina",
+    // Fuentes: Lista Roja de la UICN (En Peligro), prensa chilena y Wikipedia. Antes vivía de Coquimbo a Magallanes;
+    // hoy ha desaparecido de gran parte del norte de esa zona.
+    zona: "Antes, de Coquimbo a Magallanes",
+    regiones: ["coquimbo", "valparaiso", "metropolitana", "ohiggins", "maule", "nuble", "biobio", "araucania", "losrios", "loslagos", "aysen", "magallanes"],
+    descripcion: "¡El abejorro más grande del mundo! Es peludito, de cuerpo rojo anaranjado, con la cabeza, las alas y las patas negras. Come néctar y polen. Además, poliniza flores nativas del sur de Chile. Está en peligro de extinción porque llegaron abejorros de otros países y se pierden los lugares donde vive. Así lo clasifica la UICN, la Unión Internacional para la Conservación de la Naturaleza.",
+    tiempos: [
+      { etiqueta: "Conservación", valor: "En peligro de extinción" },
+      { etiqueta: "Reina", valor: "Hasta unos 4 cm de largo" }
+    ]
+    // No se agrega la tabla "macho / hembra" porque las fuentes no describen cómo distinguirlos
+  }
+};
+
 const casillasVacias = () => new Array(CASILLAS_POR_PLANA * 2).fill(null);
 const ENCICLOPEDIA = [
-  { titulo: "Terraza", casillas: ["pololo", ...casillasVacias().slice(1)] },
+  { titulo: "Terraza", casillas: ["pololo", "abejorro", ...casillasVacias().slice(2)] },
   { titulo: "Patio",   casillas: casillasVacias() },
   { proximamente: true }
 ];
@@ -492,6 +622,8 @@ function volarACasilla(id, casilla, dibujo) {
     ultimoRevelado = id;
     dibujarEnciclo();
     sonarBrillos();
+    // Al descubrir al abejorro se desbloquean en la tienda las macetas, la tierra y la pasiflora
+    if (id === "abejorro") ampliarTienda();
   };
 
   el.classList.add("viajando");   // el texto se desvanece
@@ -554,6 +686,21 @@ function dibujarCasillas(lista, casillas) {
 // ---------- Ficha de un insecto ----------
 const fichaCapa = document.getElementById("ficha-capa");
 const fichaDibujo = document.getElementById("ficha-dibujo");
+const fichaGiro = document.getElementById("ficha-giro");
+const fichaReal = document.getElementById("ficha-real");
+const fichaRealImg = document.getElementById("ficha-real-img");
+const fichaCredito = document.getElementById("ficha-credito");
+const fichaVoltear = document.getElementById("ficha-voltear");
+let yaVolteoFoto = false;   // después de la primera vez, el botón deja de llamar tanto la atención
+
+fichaVoltear.addEventListener("click", () => {
+  const volteada = fichaGiro.classList.toggle("volteada");
+  fichaReal.setAttribute("aria-hidden", String(!volteada));
+  fichaDibujo.setAttribute("aria-hidden", String(volteada));
+  fichaVoltear.setAttribute("aria-label", volteada ? "Ver el dibujo del insecto" : "Ver foto real del insecto");
+  yaVolteoFoto = true;
+  fichaVoltear.classList.add("ya-usado");
+});
 const fichaTexto = document.getElementById("ficha-texto");
 const botonFichaCerrar = document.getElementById("ficha-cerrar");
 let botonDeFicha = null;
@@ -580,6 +727,32 @@ function crearPololoAnimado() {
   return flota;
 }
 
+// Abejorro de frente, con sus alas aleteando (mismo lienzo para todas las capas)
+function crearAbejorroAnimado() {
+  const flota = document.createElement("div");
+  flota.className = "guia-flota";
+  const capas = document.createElement("div");
+  capas.className = "guia-capas capas-abejorro";
+  capas.append(...capasAbejorro());
+  flota.appendChild(capas);
+  return flota;
+}
+
+function capasAbejorro() {
+  return [
+    ["capa ala ala-izq", "assets/abejorro/abejorro-alas-izq.png"],
+    ["capa ala ala-der", "assets/abejorro/abejorro-alas-der.png"],
+    ["pololo-cuerpo", "assets/abejorro/abejorro-cuerpo.png"],
+    ["capa parpados", "assets/abejorro/abejorro-parpados.png"]
+  ].map(([clase, ruta]) => {
+    const pieza = document.createElement("img");
+    pieza.className = clase;
+    pieza.src = ruta;
+    pieza.alt = "";
+    return pieza;
+  });
+}
+
 // Pequeña ayuda para crear elementos
 function elemento(etiqueta, clase, texto) {
   const el = document.createElement(etiqueta);
@@ -595,15 +768,42 @@ function campoCarnet(etiqueta, valor, clase) {
   return campo;
 }
 
+const NOMBRES_REGIONES = {
+  arica: "Arica y Parinacota", tarapaca: "Tarapacá", antofagasta: "Antofagasta", atacama: "Atacama",
+  coquimbo: "Coquimbo", valparaiso: "Valparaíso", metropolitana: "Metropolitana", ohiggins: "O'Higgins",
+  maule: "Maule", nuble: "Ñuble", biobio: "Biobío", araucania: "La Araucanía", losrios: "Los Ríos",
+  loslagos: "Los Lagos", aysen: "Aysén", magallanes: "Magallanes"
+};
+
+// "Coquimbo, Valparaíso y Maule"
+function listaDeRegiones(ids) {
+  const nombres = ids.map((id) => NOMBRES_REGIONES[id] || id);
+  if (nombres.length < 2) return nombres.join("");
+  return nombres.slice(0, -1).join(", ") + " y " + nombres[nombres.length - 1];
+}
+
 function abrirFicha(id, botonOrigen) {
   const datos = INSECTOS[id];
   const ficha = datos.ficha;
   botonDeFicha = botonOrigen;
 
+  // Reverso de la foto: la foto real del insecto
+  fichaGiro.classList.remove("volteada");
+  fichaVoltear.setAttribute("aria-label", "Ver foto real del insecto");
+  fichaVoltear.classList.toggle("sin-foto", !datos.foto);
+  fichaVoltear.hidden = !datos.foto;
+  if (datos.foto) {
+    fichaRealImg.src = datos.foto;
+    fichaRealImg.alt = "Foto real: " + datos.nombre;
+    fichaCredito.hidden = !datos.fotoCredito;
+    fichaCredito.textContent = datos.fotoCredito || "";
+  }
+  fichaReal.setAttribute("aria-hidden", "true");
+
   // "Foto de carnet": el insecto (animado si tiene capas)
   fichaDibujo.replaceChildren();
   if (datos.animado) {
-    fichaDibujo.appendChild(crearPololoAnimado());
+    fichaDibujo.appendChild(datos.animado === "abejorro" ? crearAbejorroAnimado() : crearPololoAnimado());
   } else {
     const dibujo = document.createElement("img");
     dibujo.src = datos.imagen;
@@ -619,37 +819,104 @@ function abrirFicha(id, botonOrigen) {
   // Datos del carnet
   fichaTexto.replaceChildren();
   const cabecera = elemento("div", "carnet-cabecera");
-  cabecera.append(elemento("span", "carnet-titulo", "Carnet de insecto"), elemento("span", "carnet-sub", "Enciclopedia de Bichi"));
+  cabecera.append(elemento("span", "carnet-titulo", "Carnet de insecto"), elemento("span", "carnet-sub", "Diario de campo de Bichi"));
   const nombre = campoCarnet("Nombre", ficha.nombre, "campo-nombre");
   nombre.querySelector(".campo-valor").id = "ficha-titulo";
-  const fila1 = elemento("div", "campo-fila");
-  fila1.append(nombre, campoCarnet("Otro nombre", ficha.otroNombre));
-  const fila2 = elemento("div", "campo-fila");
-  fila2.append(campoCarnet("Nacionalidad", ficha.nacionalidad), campoCarnet("¿Dónde vive?", ficha.zona));
+  if (ficha.nombreCientifico) nombre.appendChild(elemento("span", "campo-cientifico", ficha.nombreCientifico));
+  const fila1 = elemento("div", "campo-fila campo-fila-3");
+  fila1.append(nombre, campoCarnet("Otro nombre", ficha.otroNombre), campoCarnet("Nacionalidad", ficha.nacionalidad));
+  // Nombres de las regiones (para que no haya que saberlas de memoria)
+  const filaRegiones = ficha.regiones
+    ? campoCarnet("Regiones", listaDeRegiones(ficha.regiones), "campo-regiones")
+    : null;
+  // Si el insecto no tiene mapa, la zona se escribe como un campo más
+  const fila2 = ficha.regiones ? null : campoCarnet("¿Dónde vive?", ficha.zona);
   const descripcion = campoCarnet("Descripción", ficha.descripcion, "campo-descripcion");
 
-  // Sexo: pequeña tabla macho / hembra
-  const sexo = elemento("div", "campo campo-sexo");
+  // Sexo: pequeña tabla macho / hembra (solo si hay datos confiables de cómo distinguirlos)
+  let sexo = null;
+  if (ficha.sexo) {
+  sexo = elemento("div", "campo campo-sexo");
   sexo.appendChild(elemento("span", "campo-etiqueta", "Sexo: cómo distinguirlos"));
   const tabla = elemento("table", "sexo-tabla");
   const encabezado = elemento("tr");
   encabezado.append(elemento("th"), ...ficha.sexo.columnas.map((c) => elemento("th", "", c)));
   tabla.appendChild(encabezado);
+  // Capa transparente sobre el dibujo del insecto, donde se iluminan las partes del cuerpo
+  const capaPartes = elemento("div", "partes-cuerpo");
+  capaPartes.setAttribute("aria-hidden", "true");
+  const contenedorDibujo = fichaDibujo.querySelector(".guia-capas") || fichaDibujo;
+  contenedorDibujo.appendChild(capaPartes);
+
   ficha.sexo.filas.forEach((fila) => {
     const tr = elemento("tr");
     tr.append(elemento("th", "", fila.etiqueta), ...fila.valores.map((v) => elemento("td", "", v)));
     tabla.appendChild(tr);
+
+    if (!fila.partes) return;
+    const piezas = fila.partes.map((p) => {
+      const pieza = elemento("span", "parte-cuerpo" + (p.redondo ? " parte-redonda" : ""));
+      pieza.style.left = p.x + "%";
+      pieza.style.top = p.y + "%";
+      pieza.style.width = p.w + "%";
+      pieza.style.height = p.h + "%";
+      if (p.giro) pieza.style.setProperty("--giro", p.giro + "deg");
+      capaPartes.appendChild(pieza);
+      return pieza;
+    });
+    const encender = (si) => {
+      tr.classList.toggle("fila-activa", si);
+      piezas.forEach((pieza) => pieza.classList.toggle("activa", si));
+    };
+    tr.tabIndex = 0;
+    tr.addEventListener("pointerenter", () => encender(true));
+    tr.addEventListener("pointerleave", () => encender(false));
+    tr.addEventListener("focus", () => encender(true));
+    tr.addEventListener("blur", () => encender(false));
+    // En pantallas táctiles no existe "pasar el cursor": un toque enciende o apaga la parte
+    tr.addEventListener("click", () => encender(!tr.classList.contains("fila-activa")));
   });
   sexo.appendChild(tabla);
+  }
 
-  fichaTexto.append(cabecera, fila1, fila2, descripcion, sexo);
+  // Mapa de Chile: se iluminan las regiones donde vive
+  const mapa = document.getElementById("ficha-mapa");
+  mapa.replaceChildren();
+  if (ficha.regiones) {
+    const base = document.createElement("img");
+    base.className = "mapa-base";
+    base.src = "assets/mapa/mapa-base.png";
+    base.alt = "";
+    mapa.appendChild(base);
+    ficha.regiones.forEach((region) => {
+      const luz = document.createElement("img");
+      luz.className = "mapa-region";
+      luz.src = "assets/mapa/region-" + region + ".png";
+      luz.alt = "";
+      mapa.appendChild(luz);
+    });
+    mapa.setAttribute("role", "img");
+    mapa.setAttribute("aria-label", "Mapa de Chile con la zona donde vive: " + ficha.zona);
+    mapa.parentElement.hidden = false;
+    document.getElementById("ficha-mapa-texto").textContent = ficha.zona;
+  } else {
+    mapa.parentElement.hidden = true;
+  }
+
+  fichaTexto.append(cabecera, fila1);
+  if (filaRegiones) fichaTexto.append(filaRegiones);
+  fichaTexto.append(descripcion);
+  if (sexo) fichaTexto.append(sexo);
+  if (fila2) fichaTexto.insertBefore(fila2, descripcion);
   fichaTexto.scrollTop = 0;
   fichaCapa.hidden = false;
+  botonEncicloCerrar.classList.add("oculto");   // mientras el carnet está abierto solo se ve su X
   botonFichaCerrar.focus();
 }
 
 function cerrarFicha() {
   fichaCapa.hidden = true;
+  botonEncicloCerrar.classList.remove("oculto");
   fichaDibujo.replaceChildren();   // así la animación se detiene
   if (botonDeFicha) botonDeFicha.focus();
   botonDeFicha = null;
@@ -666,7 +933,8 @@ function descubrirInsecto(id) {
   insectosDescubiertos.push(id);
   insectosNuevos.push(id);
   botonEnciclo.classList.add("tintinea");
-  botonEnciclo.setAttribute("aria-label", "Enciclopedia de insectos: ¡hay un insecto nuevo!");
+  botonEnciclo.setAttribute("aria-label", "Diario de campo: ¡hay un insecto nuevo!");
+  revisarMisiones();
 }
 
 function dibujarEnciclo() {
@@ -711,9 +979,15 @@ function cambiarPagina(paso) {
   }
 }
 
+let objetivoDiarioActivo = false;   // el objetivo "abre el diario" tras conocer al abejorro
+
 function abrirEnciclo() {
+  if (objetivoDiarioActivo) {
+    objetivoDiarioActivo = false;
+    ponerMision(null);
+  }
   botonEnciclo.classList.remove("tintinea");
-  botonEnciclo.setAttribute("aria-label", "Enciclopedia de insectos");
+  botonEnciclo.setAttribute("aria-label", "Diario de campo");
   focoAntesDeEnciclo = document.activeElement;
   apartadoActual = -1;   // siempre se abre con el libro cerrado
   dibujarEnciclo();
@@ -750,7 +1024,7 @@ document.addEventListener("keydown", (evento) => {
 // La enciclopedia se activa cuando termina el tutorial
 function activarEnciclopedia() {
   botonEnciclo.disabled = false;
-  botonEnciclo.setAttribute("aria-label", "Enciclopedia de insectos");
+  botonEnciclo.setAttribute("aria-label", "Diario de campo");
 }
 
 // ---------- Carrusel de niveles ----------
@@ -882,6 +1156,107 @@ const barraObjetos = document.querySelector(".hotbar");
 const slotEsponja = document.getElementById("slot-esponja");
 const botonTienda = document.getElementById("menu-tienda");
 
+// ---------- Misiones ----------
+// Un pequeño recuadro arriba dice qué toca hacer. Durante el tutorial lo manda el pololo;
+// después se usan las misiones de abajo, que dan BP al cumplirse.
+const cuadroMision = document.getElementById("mision");
+const textoMision = document.getElementById("mision-texto");
+const progresoMision = document.getElementById("mision-progreso");
+const etiquetaMision = document.getElementById("mision-etiqueta");
+const simboloMision = document.getElementById("mision-simbolo");
+const iconoMision = document.getElementById("mision-icono");
+const panelMision = document.getElementById("mision-panel");
+const puntoMision = document.getElementById("mision-punto");
+let timerMision = null;
+
+// etiqueta: "Objetivo" = lo que toca hacer para avanzar; "Misión" = retos que dan BP
+function ponerMision(texto, progreso, etiqueta) {
+  clearTimeout(timerMision);
+  etiquetaMision.textContent = etiqueta || "Objetivo";
+  simboloMision.textContent = etiqueta === "Misión" ? "!" : "?";
+  cuadroMision.classList.remove("cumplida");
+  if (!texto) {
+    cuadroMision.hidden = true;
+    return;
+  }
+  const cambio = textoMision.textContent !== texto;
+  textoMision.textContent = texto;
+  progresoMision.textContent = progreso || "";
+  cuadroMision.hidden = false;
+  ubicarMision();
+  if (cambio) {
+    // El icono se mueve y deja un puntito hasta que el jugador lo abre
+    cuadroMision.classList.remove("nueva");
+    void cuadroMision.offsetWidth;   // reinicia la animación
+    cuadroMision.classList.add("nueva");
+    if (!panelMision.hidden) return;
+    puntoMision.hidden = false;
+  }
+}
+
+// El icono va en la esquina superior izquierda del escenario; si el engranaje de configuración
+// (que flota sobre la página) tapa esa esquina, se pone justo a su lado, en la misma fila
+function ubicarMision() {
+  const caja = escena.getBoundingClientRect();
+  if (!caja.width) return;
+  const engranaje = document.getElementById("btn-config").getBoundingClientRect();
+  const margen = Math.max(8, caja.width * 0.01);
+  let izq = margen;
+  let arriba = margen;
+  if (engranaje.right + 8 > caja.left && engranaje.left < caja.right) {
+    izq = Math.max(margen, engranaje.right + 8 - caja.left);
+    arriba = Math.max(margen, engranaje.top - caja.top);
+  }
+  cuadroMision.style.left = izq + "px";
+  cuadroMision.style.top = arriba + "px";
+}
+window.addEventListener("resize", ubicarMision);
+
+// Clic en el icono: muestra u oculta el objetivo
+function abrirMision(abrir) {
+  panelMision.hidden = !abrir;
+  iconoMision.setAttribute("aria-expanded", String(abrir));
+  if (abrir) puntoMision.hidden = true;
+}
+iconoMision.addEventListener("click", () => abrirMision(panelMision.hidden));
+
+// Misiones de después del tutorial (se pueden agregar más; van en orden)
+//  - progreso: función que dice cuánto lleva el jugador;  meta: cuánto necesita;  recompensa: BP
+const MISIONES = [
+  { texto: "Planta dos plantas diferentes", meta: 2, recompensa: 3, progreso: () => estado.especiesPlantadas.length }
+];
+
+function mostrarMisionLibre() {
+  const mision = MISIONES[estado.misionActual];
+  if (!mision) {
+    ponerMision("¡Cumpliste todas las misiones por ahora!", "", "Misión");
+    timerMision = setTimeout(() => ponerMision(null), 6000);
+    return;
+  }
+  ponerMision(mision.texto, Math.min(mision.progreso(), mision.meta) + " / " + mision.meta, "Misión");
+}
+
+// Se llama cada vez que pasa algo que podría cumplir la misión (plantar, descubrir un insecto...)
+function revisarMisiones() {
+  if (!estado.tutorialTerminado) return;
+  const mision = MISIONES[estado.misionActual];
+  if (!mision) return;
+  if (mision.progreso() < mision.meta) {
+    mostrarMisionLibre();
+    return;
+  }
+  // ¡Cumplida!
+  estado.monedas += mision.recompensa;
+  mostrarMonedas();
+  animarSaldo(mision.recompensa);
+  sonarBrillos();
+  estado.misionActual++;
+  ponerMision("¡Misión cumplida! +" + mision.recompensa + " BP", "", "Misión");
+  abrirMision(true);   // se muestra sola un momento
+  cuadroMision.classList.add("cumplida");
+  timerMision = setTimeout(() => { mostrarMisionLibre(); abrirMision(false); }, 3200);
+}
+
 // ---------- Tutorial del pololo verde ----------
 // Cada secuencia es una lista de mensajes. Se pueden cambiar sin tocar el resto del código.
 //  - texto:         lo que dice el pololo
@@ -894,26 +1269,27 @@ const botonTienda = document.getElementById("menu-tienda");
 
 // 1) Presentación y limpieza
 const PASOS_INTRO = [
-  { texto: "¡Oh, hola, y bienvenido a Bichi!" },
+  { texto: "¡Oh, hola, y bienvenido a Bichi!", mision: "Habla con el pololo" },
   { texto: "Yo soy San Juan verde, o para los amigos, Pololo verde. Habito aquí en Chile y…" },
   { texto: "Mmm… veo que observas el fondo. Sí, está un poco descuidado, y en esas telarañas ya no vive nadie.", desenfoque: false },
   { texto: "¿Te parece si arreglamos un poco?", desenfoque: false },
   { texto: "Antes de que se me olvide, te explicaré unas cositas muy importantes para hacer el cambio en este lugar." },
   { texto: "Al costado izquierdo tienes un menú con distintos íconos.", resalta: "menu-izq" },
   { texto: "El ícono de la H es para ir a la fabricación de tu hotel de insectos, pero eso lo veremos más adelante.", resalta: "menu-hotel" },
-  { texto: "También tienes tu propia enciclopedia, donde podrás ver todos los insectos que encuentres durante tu experiencia.", resalta: "menu-enciclopedia" },
+  { texto: "También tienes tu propio diario de campo, donde podrás ver todos los insectos que encuentres durante tu experiencia.", resalta: "menu-enciclopedia" },
   { texto: "Y luego tenemos la tienda. En ella podrás comprar distintas herramientas y artículos para ir mejorando esta terraza, para que distintos insectos se acerquen aquí.", resalta: "menu-tienda" },
   { texto: "Pero… te preguntarás cómo comprar. Para eso tenemos los increíbles BichiPesos (BP). ¡Los conseguirás al regar tus plantas y al encontrar insectos nuevos!", resalta: "saldo" },
   { texto: "Pero, por el momento, ¡yo te daré 10 BP para que comencemos!", resalta: "saldo", regalo: 10 },
-  { texto: "¿Ves esa esponja en tu inventario? ¡Utilicémosla para limpiar este lugar! Haz clic en ella y, con el clic presionado, muévela por la pantalla hasta limpiar todo.", desenfoque: false, resalta: "slot-esponja" }
+  { texto: "¿Ves esa esponja en tu inventario? ¡Utilicémosla para limpiar este lugar! Haz clic en ella y, con el clic presionado, muévela por la pantalla hasta limpiar todo.", desenfoque: false, resalta: "slot-esponja", mision: "Limpia el balcón con la esponja" }
 ];
 
 // 2) Después de limpiar: el pololo muestra la tienda
 const PASOS_DESPUES_DE_LIMPIAR = [
-  { texto: "¡Buen trabajo! Ahora está mejor.", desenfoque: false },
+  { texto: "¡Buen trabajo! Ahora está mejor.", desenfoque: false, mision: "Habla con el pololo" },
   {
     texto: "Pero podría ser mucho mejor… ¡te mostraré la tienda!",
     resalta: "menu-tienda",
+    mision: "Abre la tienda",
     espera: "abrir-tienda",
     alMostrar: () => { botonTienda.disabled = false; }
   }
@@ -921,22 +1297,26 @@ const PASOS_DESPUES_DE_LIMPIAR = [
 
 // 3) Con la tienda abierta
 const PASOS_EN_LA_TIENDA = [
-  { texto: "¡Mira cuántas cosas! Aquí arriba están las herramientas y los materiales para mejorar tu terraza.", resalta: "tienda-herramientas", requiereTienda: true },
+  { texto: "¡Mira cuántas cosas! Aquí arriba están las herramientas y los materiales para mejorar tu terraza.", resalta: "tienda-herramientas", requiereTienda: true, mision: "Habla con el pololo" },
   { texto: "Y aquí abajo están las semillas. Cada planta puede atraer insectos distintos, ¡así que elige con cuidado!", resalta: "tienda-semillas", requiereTienda: true },
   { texto: "Cada cosa tiene su precio en BP. Si no te alcanzan, ¡tendrás que juntar más!", resalta: "saldo", requiereTienda: true },
-  { texto: "Para empezar, compremos semillas de manzanilla. ¡Cuestan 2 BP!", resalta: "comprar-semillas-manzanilla", requiereTienda: true, espera: "comprar-manzanilla" }
+  { texto: "Para empezar, compremos semillas de manzanilla. ¡Cuestan 2 BP!", resalta: "comprar-semillas-manzanilla", requiereTienda: true, espera: "comprar-manzanilla",
+    mision: "Compra semillas de manzanilla",
+    // recién ahora se abre el botón de la manzanilla
+    alMostrar: () => { estado.puedeComprarManzanilla = true; actualizarTienda(); } }
 ];
 
 // 4) Después de comprar la manzanilla
 const PASOS_COMPRA_HECHA = [
-  { texto: "¡Excelente! Mira cómo bajó tu saldo y cómo llegaron tus semillas al inventario.", resalta: "slot-semillas-manzanilla" }
+  { texto: "¡Excelente! Mira cómo bajó tu saldo y cómo llegaron tus semillas al inventario.", resalta: "slot-semillas-manzanilla", mision: "Habla con el pololo" }
 ];
 
 // 5) Plantar: el jugador arrastra las semillas hasta la maceta de la derecha
 const PASOS_PLANTAR = [
   {
-    texto: "Ahora toma tus semillas del inventario, arrástralas hasta la maceta de la derecha y suéltalas ahí.",
+    texto: "Ahora haz clic en tus semillas del inventario y luego haz clic sobre la maceta de la derecha para plantarlas.",
     desenfoque: false,
+    mision: "Planta las semillas en la maceta de la derecha",
     resalta: ["slot-semillas-manzanilla", "zona-maceta"],
     espera: "plantar",
     alMostrar: () => {
@@ -949,16 +1329,17 @@ const PASOS_PLANTAR = [
 
 // 6) Ya plantada
 const PASOS_PLANTADA = [
-  { texto: "¡Mira, ya brotó! Debajo de la maceta hay una barra que muestra cuánto le falta para crecer.", desenfoque: false, resalta: "barra-crecimiento" },
+  { texto: "¡Mira, ya brotó! Debajo de la maceta hay una barra que muestra cuánto le falta para crecer.", desenfoque: false, resalta: "barra-crecimiento", mision: "Habla con el pololo" },
   { texto: "Te dejo mirando cómo crece. ¡Ya vuelvo!", desenfoque: false }
 ];
 
 // 7) La planta tiene sed
 const PASOS_SED = [
-  { texto: "¡Oh, oh! ¿Ves esa gotita? Tu manzanilla tiene sed y dejó de crecer.", desenfoque: false, resalta: "icono-gota" },
+  { texto: "¡Oh, oh! ¿Ves esa gotita? Tu manzanilla tiene sed y dejó de crecer.", desenfoque: false, resalta: "icono-gota", mision: "Habla con el pololo" },
   { texto: "Las plantas necesitan agua para crecer sanas. ¡Hay una regadera sobre la mesa de la derecha! Haz clic en ella para guardarla en tu inventario.",
     desenfoque: false,
     resalta: "zona-regadera",
+    mision: "Toma la regadera de la mesa",
     espera: "tomar-regadera",
     alMostrar: () => {
       zonaRegadera.hidden = false;
@@ -973,6 +1354,7 @@ const PASOS_REGAR = [
     texto: "¡Muy bien! Ahora selecciona la regadera en tu inventario y haz clic sobre tu manzanilla para regarla.",
     desenfoque: false,
     resalta: ["slot-regadera", "zona-maceta"],
+    mision: "Riega tu manzanilla con la regadera",
     espera: "regar",
     alMostrar: () => {
       estado.regaderaUsable = true;
@@ -983,12 +1365,12 @@ const PASOS_REGAR = [
 
 // 9) La planta se recupera
 const PASOS_RECUPERADA = [
-  { texto: "¡Funcionó! Tu manzanilla se recuperó y volvió a crecer. Además, regar te dio 1 BP: cada vez que riegues una planta recibirás la mitad de lo que costaron sus semillas.", desenfoque: false, resalta: "saldo" }
+  { texto: "¡Funcionó! Tu manzanilla se recuperó y volvió a crecer. Además, regar te dio 1 BP: cada vez que riegues una planta recibirás la mitad de lo que costaron sus semillas.", desenfoque: false, resalta: "saldo", mision: "Habla con el pololo" }
 ];
 
 // 10) La manzanilla florece
 const PASOS_FINAL = [
-  { texto: "¡Mira esa manzanilla! Ya floreció gracias a tus cuidados.", desenfoque: false },
+  { texto: "¡Mira esa manzanilla! Ya floreció gracias a tus cuidados.", desenfoque: false, mision: "Habla con el pololo" },
   { texto: "¿Ves la otra maceta, la de la izquierda? Aún está vacía. Pasa por la tienda, compra semillas de rosa y plántalas ahí.", desenfoque: false, resalta: "zona-maceta-izq" },
   { texto: "Esto es todo por ahora. Me haré pequeñito para volar por tu terraza. ¡Pronto habrá más cosas por descubrir!", desenfoque: false }
 ];
@@ -1022,6 +1404,7 @@ function mostrarPaso() {
   const paso = secuencia[pasoActual];
 
   textoGlobo.textContent = paso.texto;
+  if (paso.mision !== undefined) ponerMision(paso.mision);
   fondoEscena.classList.toggle("desenfocado", paso.desenfoque !== false);
 
   // Si el paso espera una acción del jugador, no hay flecha
@@ -1158,7 +1541,23 @@ PRODUCTOS.forEach((producto) => {
 });
 actualizarTienda();
 
+function ampliarTienda() {
+  if (estado.tiendaAmpliada) return;
+  estado.tiendaAmpliada = true;
+  actualizarTienda();
+  avisarTiendaNueva();
+  aplicarEstadoSlots();
+}
+
+// El botón de la tienda tintinea cuando hay productos nuevos por descubrir (se apaga al abrirla)
+function avisarTiendaNueva() {
+  botonTienda.classList.add("tintinea");
+  botonTienda.setAttribute("aria-label", "Tienda: ¡hay productos nuevos!");
+}
+
 function abrirTienda() {
+  botonTienda.classList.remove("tintinea");
+  botonTienda.setAttribute("aria-label", "Tienda");
   tienda.hidden = false;
   escena.classList.add("tienda-abierta");
   avisoTienda.textContent = "";
@@ -1186,6 +1585,11 @@ function comprar(producto) {
   mostrarMonedas();
   estado.inventario[producto.id] = (estado.inventario[producto.id] || 0) + 1;
   if (producto.id === "semillas-rosa") estado.rosaComprada = true;
+  if (producto.id === "semillas-manzanilla") {
+    // una sola compra: el botón se bloquea para que no gasten todos los BP aquí
+    estado.manzanillaComprada = true;
+    estado.puedeComprarManzanilla = false;
+  }
   dibujarInventario();
   actualizarTienda();
   avisoTienda.textContent = "¡Compraste " + producto.nombre + "!";
@@ -1256,13 +1660,31 @@ function dibujarInventario() {
 function aplicarEstadoSlots() {
   // Cada casilla de semillas se activa solo si hay una maceta donde plantarla
   barraObjetos.querySelectorAll('.slot-dinamico[id^="slot-semillas-"]').forEach((slot) => {
-    slot.disabled = !macetaParaSemilla(slot.id.replace("slot-", ""));
+    const idSemilla = slot.id.replace("slot-", "");
+    slot.disabled = !macetaParaSemilla(idSemilla);
+    slot.classList.toggle("seleccionado", estado.semillaSeleccionada === idSemilla);
+    slot.setAttribute("aria-pressed", String(estado.semillaSeleccionada === idSemilla));
   });
+
+  // Maceta: se activa si queda un lugar libre en el piso. Saco de tierra: si hay una maceta sin tierra.
+  const slotMaceta = document.getElementById("slot-maceta-terracota");
+  if (slotMaceta) {
+    slotMaceta.disabled = !hayLugarLibre();
+    slotMaceta.classList.toggle("seleccionado", estado.semillaSeleccionada === "maceta-terracota");
+    slotMaceta.setAttribute("aria-pressed", String(estado.semillaSeleccionada === "maceta-terracota"));
+  }
+  const slotTierra = document.getElementById("slot-saco-tierra");
+  if (slotTierra) {
+    slotTierra.disabled = !macetaParaSemilla("saco-tierra");
+    slotTierra.classList.toggle("seleccionado", estado.semillaSeleccionada === "saco-tierra");
+    slotTierra.setAttribute("aria-pressed", String(estado.semillaSeleccionada === "saco-tierra"));
+  }
 
   const regadera = document.getElementById("slot-regadera");
   if (regadera) {
     regadera.disabled = !estado.regaderaUsable;
     regadera.classList.toggle("seleccionado", estado.regaderaSeleccionada);
+    regadera.setAttribute("aria-pressed", String(estado.regaderaSeleccionada));
   }
 
   actualizarZonas();
@@ -1349,7 +1771,10 @@ function seleccionarEsponja(activa) {
   slotEsponja.classList.toggle("seleccionado", activa);
   escena.classList.toggle("modo-esponja", activa);
   esponjaCursor.hidden = !activa;
-  if (activa) quitarResaltado();
+  if (activa) {
+    quitarResaltado();
+    if (!estado.limpiezaCompleta) { barraLimpieza.hidden = false; dibujarBarraLimpieza(); }
+  }
 }
 
 slotEsponja.addEventListener("click", () => {
@@ -1427,7 +1852,21 @@ lienzo.addEventListener("pointerup", soltarEsponja);
 lienzo.addEventListener("pointercancel", soltarEsponja);
 
 // ¿Ya está lo suficientemente limpio?
+const barraLimpieza = document.getElementById("barra-limpieza");
+const limpiezaRelleno = document.getElementById("limpieza-relleno");
+const limpiezaBurbujas = document.getElementById("limpieza-burbujas");
+
+// Dibuja el nivel de limpieza (0 a 1): 100 % = lo necesario para dar por limpio el balcón
+function dibujarBarraLimpieza() {
+  const nivel = Math.max(0, Math.min(1, cantidadLimpias / (TOTAL_CELDAS * META_LIMPIEZA)));
+  const pct = Math.round(nivel * 100);
+  limpiezaRelleno.style.width = pct + "%";
+  limpiezaBurbujas.style.left = pct + "%";
+  barraLimpieza.setAttribute("aria-valuenow", String(pct));
+}
+
 function comprobarLimpieza() {
+  dibujarBarraLimpieza();
   if (estado.limpiezaCompleta) return;
   if (cantidadLimpias / TOTAL_CELDAS >= META_LIMPIEZA) completarLimpieza();
 }
@@ -1438,6 +1877,9 @@ function completarLimpieza() {
   frotando = false;
   seleccionarEsponja(false);
   slotEsponja.disabled = true;
+  dibujarBarraLimpieza();
+  barraLimpieza.classList.add("completa");
+  setTimeout(() => { barraLimpieza.hidden = true; }, 1600);
   quitarResaltado();
 
   // La suciedad que queda se desvanece y se ve el balcón limpio
@@ -1451,18 +1893,26 @@ function completarLimpieza() {
     actualizarBarra();
   }, 1300);
 
-  // Después vuelve el pololo: felicita, muestra la tienda y guía la primera compra
+  // Primero las macetas: sin diálogo, solo el objetivo arriba
   setTimeout(() => {
-    iniciarSecuencia(PASOS_DESPUES_DE_LIMPIAR, () => {
-      iniciarSecuencia(PASOS_EN_LA_TIENDA, () => {
-        iniciarSecuencia(PASOS_COMPRA_HECHA, () => {
-          iniciarSecuencia(PASOS_PLANTAR, () => {
-            iniciarSecuencia(PASOS_PLANTADA);
+    ponerMision("Levanta las dos macetas");
+    activarMacetas();
+  }, 1600);
+
+  // Cuando las dos están de pie, vuelve el pololo: felicita, muestra la tienda y guía la primera compra
+  alLevantarMacetas = () => {
+    setTimeout(() => {
+      iniciarSecuencia(PASOS_DESPUES_DE_LIMPIAR, () => {
+        iniciarSecuencia(PASOS_EN_LA_TIENDA, () => {
+          iniciarSecuencia(PASOS_COMPRA_HECHA, () => {
+            iniciarSecuencia(PASOS_PLANTAR, () => {
+              iniciarSecuencia(PASOS_PLANTADA, () => ponerMision("Espera a que crezca tu manzanilla"));
+            });
           });
         });
       });
-    });
-  }, 2400);
+    }, 500);
+  };
 }
 
 // ---------- Plantar y crecer ----------
@@ -1489,14 +1939,29 @@ const ESPECIES = {
     lienzo: { ancho: 1054, anclaX: 552, anclaY: 1153, escala: 0.292 }
   },
   rosa: {
-    etapaInicial: "mediana",   // la rosa no tiene imagen de brote: parte en etapa mediana
+    etapaInicial: "pequena",   // parte desde el brote más pequeño, como todas
     imagenes: {
+      pequena: "assets/plantas/manzanilla-pequena.png",   // el brote en maceta que ya teníamos
       mediana: "assets/plantas/rosa-mediana.png",
       sed:     "assets/plantas/rosa-sed.png",
       grande:  "assets/plantas/rosa-flor.png",
       marchita: "assets/plantas/rosa-marchita.png"
     },
-    lienzo: { ancho: 619, anclaX: 313.06, anclaY: 848.36, escala: 0.415 }
+    lienzo: { ancho: 619, anclaX: 313.06, anclaY: 848.36, escala: 0.415 },
+    // El brote es la imagen de la manzanilla: se achica para que su maceta mida igual que la de la rosa
+    lienzoEtapa: { pequena: { ancho: 1054, anclaX: 552, anclaY: 1153, escala: 0.262 } }
+  },
+  pasiflora: {
+    etapaInicial: "pequena",   // como todas: parte desde el brote más pequeño
+    imagenes: {
+      pequena: "assets/plantas/manzanilla-pequena.png",   // el brote en maceta que ya teníamos
+      mediana: "assets/plantas/pasiflora-mediana.png",
+      sed:     "assets/plantas/pasiflora-sed.png",
+      grande:  "assets/plantas/pasiflora-flor.png",
+      marchita: "assets/plantas/pasiflora-marchita.png"
+    },
+    lienzo: { ancho: 619, anclaX: 313.06, anclaY: 848.36, escala: 0.415 },
+    lienzoEtapa: { pequena: { ancho: 1054, anclaX: 552, anclaY: 1153, escala: 0.262 } }
   }
 };
 
@@ -1504,6 +1969,8 @@ const ESPECIES = {
 const MACETAS = [
   {
     nombre: "derecha", x: 86.54, y: 30.5,
+    sprite: document.getElementById("maceta-sprite"),
+    sombra: document.getElementById("sombra-der"),
     zona: document.getElementById("zona-maceta"),
     planta: document.getElementById("planta"),
     barra: document.getElementById("barra-crecimiento"),
@@ -1512,6 +1979,8 @@ const MACETAS = [
   },
   {
     nombre: "izquierda", x: 17.08, y: 30.5,
+    sprite: document.getElementById("maceta-sprite-izq"),
+    sombra: document.getElementById("sombra-izq"),
     zona: document.getElementById("zona-maceta-izq"),
     planta: document.getElementById("planta-izq"),
     barra: document.getElementById("barra-crecimiento-izq"),
@@ -1528,7 +1997,38 @@ MACETAS.forEach((maceta) => {
   maceta.pausada = false;
   maceta.regada = false;
   maceta.terminada = false;
+  maceta.levantada = false; // las macetas empiezan tiradas
 });
+
+// Al limpiar el balcón las macetas se pueden tocar; cada clic la enderezan
+function activarMacetas() {
+  MACETAS.forEach((maceta) => {
+    if (maceta.levantada) return;
+    maceta.sprite.disabled = false;
+    maceta.sprite.classList.add("activa");
+  });
+}
+
+function levantarMaceta(maceta) {
+  if (maceta.levantada) return;
+  maceta.levantada = true;
+  maceta.sprite.disabled = true;
+  maceta.sprite.classList.remove("activa", "caida");
+  setTimeout(() => maceta.sombra.classList.remove("caida"), 450);   // la sombra vuelve bajo la maceta al caer de pie
+  maceta.sprite.classList.add("levantando");
+  sonarPlop();
+  setTimeout(() => {
+    maceta.sprite.classList.remove("levantando");
+    if (MACETAS.every((m) => m.levantada)) alLevantarMacetas();
+  }, 1000);
+}
+
+MACETAS.forEach((maceta) => {
+  maceta.sprite.addEventListener("click", () => levantarMaceta(maceta));
+});
+
+// Cuando las dos macetas están de pie, el pololo vuelve y sigue el tutorial
+let alLevantarMacetas = () => {};
 
 // Tiempos del crecimiento (PROVISORIOS, solo para probar; los puedes cambiar)
 const CRECIMIENTO = {
@@ -1561,15 +2061,19 @@ function esDelTutorial(maceta) {
   return maceta === MACETAS[0] && maceta.especie === "manzanilla" && !estado.tutorialTerminado;
 }
 
-// ¿En qué maceta se puede plantar esta semilla ahora mismo? (null = en ninguna)
-function macetaParaSemilla(semillaId) {
-  if (semillaId === "semillas-manzanilla") {
-    return estado.puedePlantar && !MACETAS[0].especie ? MACETAS[0] : null;
-  }
-  if (semillaId === "semillas-rosa") {
-    return estado.tutorialTerminado && !MACETAS[1].especie ? MACETAS[1] : null;
-  }
-  return null;
+// ¿Esta maceta puede recibir ahora este objeto (semilla o saco de tierra)?
+function macetaAcepta(maceta, id) {
+  if (id === "saco-tierra") return maceta.sinTierra === true;
+  if (id === "semillas-manzanilla") return estado.puedePlantar && maceta === MACETAS[0] && !maceta.especie;
+  if (id === "semillas-rosa") return estado.tutorialTerminado && maceta === MACETAS[1] && !maceta.especie;
+  // La pasiflora va en las macetas nuevas, ya con tierra
+  if (id === "semillas-pasiflora") return estado.tiendaAmpliada && maceta.extra === true && !maceta.sinTierra && !maceta.especie;
+  return false;
+}
+
+// ¿En qué maceta se puede usar este objeto ahora mismo? (null = en ninguna)
+function macetaParaSemilla(id) {
+  return MACETAS.find((m) => macetaAcepta(m, id)) || null;
 }
 
 function necesitaAgua(maceta) {
@@ -1579,17 +2083,19 @@ function necesitaAgua(maceta) {
 // La zona de cada maceta solo se puede usar cuando recibe una semilla o cuando la planta tiene sed
 function actualizarZonas() {
   MACETAS.forEach((maceta) => {
-    const recibeSemilla = Object.keys(estado.inventario).some(
-      (id) => (estado.inventario[id] || 0) > 0 && macetaParaSemilla(id) === maceta
-    );
-    maceta.zona.disabled = !(recibeSemilla || necesitaAgua(maceta));
+    // La zona (maceta y planta) responde cuando llevas una semilla para ella o la planta pide agua
+    const recibeSemilla = Boolean(estado.semillaSeleccionada) && macetaAcepta(maceta, estado.semillaSeleccionada);
+    maceta.zona.disabled = !maceta.levantada || !(recibeSemilla || necesitaAgua(maceta));
+    maceta.zona.classList.toggle("objetivo", recibeSemilla);
+    maceta.zona.classList.toggle("vacia", !maceta.especie);   // vacía: la caja se ajusta solo a la maceta
   });
+  actualizarLugares();
 }
 
 // Cambia la imagen de la planta, con un pequeño "pop"
 function mostrarPlanta(maceta, etapa) {
   const especie = ESPECIES[maceta.especie];
-  const lienzoEsp = especie.lienzo;
+  const lienzoEsp = (especie.lienzoEtapa && especie.lienzoEtapa[etapa]) || especie.lienzo;
   maceta.etapa = etapa;
 
   // Ubica la imagen para que su ancla quede sobre la base de la maceta
@@ -1600,6 +2106,7 @@ function mostrarPlanta(maceta, etapa) {
 
   maceta.planta.src = especie.imagenes[etapa];
   maceta.planta.hidden = false;
+  maceta.sprite.hidden = true;   // la imagen de la planta ya trae su propia maceta
   maceta.planta.classList.remove("cambia");
   void maceta.planta.offsetWidth; // reinicia la animación
   maceta.planta.classList.add("cambia");
@@ -1667,7 +2174,7 @@ function darSed(maceta) {
     setTimeout(() => {
       iniciarSecuencia(PASOS_SED, () => {
         iniciarSecuencia(PASOS_REGAR, () => {
-          iniciarSecuencia(PASOS_RECUPERADA);
+          iniciarSecuencia(PASOS_RECUPERADA, () => ponerMision("Espera a que florezca tu manzanilla"));
         });
       });
     }, 1200);
@@ -1689,21 +2196,32 @@ function florecer(maceta) {
   if (esDelTutorial(maceta)) {
     setTimeout(() => iniciarSecuencia(PASOS_FINAL, terminarTutorial), 1200);
   }
+
+  // La primera rosa que florece atrae al abejorro colorado, unos segundos después
+  if (maceta.especie === "rosa" && !estado.abejorroProgramado) {
+    estado.abejorroProgramado = true;
+    setTimeout(iniciarEventoAbejorro, ABEJORRO.esperaTrasFlor * 1000);
+  }
 }
+
+// Para ajustar el tamaño de las "cajas de clic": abre el juego con ?cajas al final de la dirección
+// (por ejemplo index.html?cajas) y verás las zonas marcadas en rojo.
+if (/[?&]cajas\b/.test(window.location.search)) document.documentElement.classList.add("ver-cajas");
 
 // Fin del tutorial: se desbloquea la rosa y el pololo pequeñito empieza a volar
 function terminarTutorial() {
   estado.tutorialTerminado = true;
   activarEnciclopedia();
   descubrirInsecto("pololo");   // el pololo pequeñito es el primer insecto registrado
+  mostrarMisionLibre();
   actualizarTienda();
+  avisarTiendaNueva();   // la rosa ya se puede comprar
   aplicarEstadoSlots();
   iniciarVueloLibre();
 }
 
-// ---------- Arrastrar las semillas hasta la maceta ----------
-let arrastrandoSemilla = false;
-let semillaActual = null;   // { id, maceta } de la semilla que se está arrastrando
+// ---------- Semillas: clic en la semilla y clic en la maceta ----------
+// Igual que la esponja y la regadera: se elige con un clic y se usa con otro clic.
 
 function moverObjeto(elemento, evento) {
   const caja = escena.getBoundingClientRect();
@@ -1717,76 +2235,43 @@ function imagenLista(imagen) {
 }
 
 function actualizarModoObjeto() {
-  const conSemilla = arrastrandoSemilla && imagenLista(semillaArrastre);
+  const conSemilla = Boolean(estado.semillaSeleccionada) && imagenLista(semillaArrastre);
   const conRegadera = estado.regaderaSeleccionada && imagenLista(regaderaCursor);
   escena.classList.toggle("modo-objeto", conSemilla || conRegadera);
 }
 
-// ¿El mouse está sobre la maceta? (con un poquito de margen para que sea fácil acertar)
-function estaSobreMaceta(evento, maceta) {
-  const caja = maceta.zona.getBoundingClientRect();
-  const margen = caja.width * 0.2;
-  return (
-    evento.clientX >= caja.left - margen && evento.clientX <= caja.right + margen &&
-    evento.clientY >= caja.top - margen && evento.clientY <= caja.bottom + margen
-  );
+// Toma una semilla "en la mano" (o la suelta si id es null)
+function seleccionarSemilla(id) {
+  if (id && estado.regaderaSeleccionada) seleccionarRegadera(false);
+  estado.semillaSeleccionada = id;
+  if (id) {
+    const producto = PRODUCTOS.find((p) => p.id === id);
+    if (producto) semillaArrastre.src = producto.imagen;
+    quitarResaltado();
+  } else {
+    semillaArrastre.hidden = true;
+  }
+  actualizarModoObjeto();
+  aplicarEstadoSlots();
 }
 
-barraObjetos.addEventListener("pointerdown", (evento) => {
-  const slot = evento.target.closest('.slot-dinamico[id^="slot-semillas-"]');
+barraObjetos.addEventListener("click", (evento) => {
+  const slot = evento.target.closest('.slot-dinamico[id^="slot-semillas-"], #slot-maceta-terracota, #slot-saco-tierra');
   if (!slot || slot.disabled) return;
-
   const id = slot.id.replace("slot-", "");
-  const maceta = macetaParaSemilla(id);
-  if (!maceta) return;
-
-  evento.preventDefault();
-  arrastrandoSemilla = true;
-  semillaActual = { id, maceta };
-  slot.setPointerCapture(evento.pointerId);
-  slot.classList.add("arrastrando");
-
-  // La semilla que se arrastra es la misma que se ve en la casilla
-  const producto = PRODUCTOS.find((p) => p.id === id);
-  if (producto) semillaArrastre.src = producto.imagen;
-  semillaArrastre.hidden = false;
-  moverObjeto(semillaArrastre, evento);
-  actualizarModoObjeto();
+  seleccionarSemilla(estado.semillaSeleccionada === id ? null : id);
 });
-
-barraObjetos.addEventListener("pointermove", (evento) => {
-  if (!arrastrandoSemilla) return;
-  moverObjeto(semillaArrastre, evento);
-  actualizarModoObjeto();
-  semillaActual.maceta.zona.classList.toggle("sobre", estaSobreMaceta(evento, semillaActual.maceta));
-});
-
-function terminarArrastre(evento, cancelado) {
-  if (!arrastrandoSemilla) return;
-  const { id, maceta } = semillaActual;
-  arrastrandoSemilla = false;
-  semillaActual = null;
-  semillaArrastre.hidden = true;
-  maceta.zona.classList.remove("sobre");
-  const slot = document.getElementById("slot-" + id);
-  if (slot) slot.classList.remove("arrastrando");
-  actualizarModoObjeto();
-
-  // Si la soltó sobre la maceta, se planta; si no, la semilla vuelve al inventario
-  if (!cancelado && estaSobreMaceta(evento, maceta)) plantar(maceta, id);
-}
-
-barraObjetos.addEventListener("pointerup", (evento) => terminarArrastre(evento, false));
-barraObjetos.addEventListener("pointercancel", (evento) => terminarArrastre(evento, true));
 
 function plantar(maceta, semillaId) {
-  if (macetaParaSemilla(semillaId) !== maceta) return;
+  if (!macetaAcepta(maceta, semillaId)) return;
 
   // Se gasta una semilla
+  seleccionarSemilla(null);
   if (maceta === MACETAS[0]) estado.puedePlantar = false;
   estado.inventario[semillaId] = Math.max(0, (estado.inventario[semillaId] || 0) - 1);
 
   maceta.especie = semillaId.replace("semillas-", "");
+  if (!estado.especiesPlantadas.includes(maceta.especie)) estado.especiesPlantadas.push(maceta.especie);
   maceta.progreso = 0;
   maceta.pausada = false;
   maceta.regada = false;
@@ -1797,6 +2282,7 @@ function plantar(maceta, semillaId) {
   encenderReloj();
   dibujarInventario();
 
+  revisarMisiones();
   if (maceta === MACETAS[0] && esperaActual === "plantar") avanzar();
 }
 
@@ -1813,6 +2299,7 @@ zonaRegadera.addEventListener("click", () => {
 });
 
 function seleccionarRegadera(activa) {
+  if (activa && estado.semillaSeleccionada) seleccionarSemilla(null);
   estado.regaderaSeleccionada = activa;
   regaderaCursor.hidden = !activa;
   actualizarModoObjeto();
@@ -1820,44 +2307,208 @@ function seleccionarRegadera(activa) {
   if (activa) quitarResaltado();
 }
 
-// Clic en las casillas del inventario (regadera con mouse; semillas con teclado)
+// Clic en la casilla de la regadera
 barraObjetos.addEventListener("click", (evento) => {
-  const slot = evento.target.closest(".slot-dinamico");
+  const slot = evento.target.closest("#slot-regadera");
   if (!slot || slot.disabled) return;
-
-  if (slot.id === "slot-regadera") seleccionarRegadera(!estado.regaderaSeleccionada);
-
-  // Con teclado (Enter o espacio) no se puede arrastrar: la semilla se planta directo
-  if (slot.id.startsWith("slot-semillas-") && evento.detail === 0) {
-    const id = slot.id.replace("slot-", "");
-    const maceta = macetaParaSemilla(id);
-    if (maceta) plantar(maceta, id);
-  }
+  seleccionarRegadera(!estado.regaderaSeleccionada);
 });
 
 // La regadera sigue al mouse dentro de la escena
 escena.addEventListener("pointermove", (evento) => {
-  if (estado.regaderaSeleccionada) {
+  if (estado.regaderaSeleccionada && !regando) {
     regaderaCursor.hidden = false;
     moverObjeto(regaderaCursor, evento);
+  }
+  if (estado.semillaSeleccionada) {
+    semillaArrastre.hidden = false;
+    moverObjeto(semillaArrastre, evento);
   }
 });
 
 escena.addEventListener("pointerleave", () => {
-  regaderaCursor.hidden = true;
+  if (!regando) regaderaCursor.hidden = true;
+  semillaArrastre.hidden = true;
 });
 
 // Esc guarda la regadera
 document.addEventListener("keydown", (evento) => {
-  if (evento.key === "Escape" && estado.regaderaSeleccionada) seleccionarRegadera(false);
+  if (evento.key !== "Escape") return;
+  if (regando) return;
+  if (estado.regaderaSeleccionada) seleccionarRegadera(false);
+  if (estado.semillaSeleccionada) seleccionarSemilla(null);
 });
 
-// Regar una planta: clic sobre su maceta con la regadera en la mano
-MACETAS.forEach((maceta) => {
+// Clic sobre la maceta o la planta: llena con tierra, planta la semilla que llevas o riega con la regadera
+function conectarZona(maceta) {
   maceta.zona.addEventListener("click", () => {
-    if (estado.regaderaSeleccionada && necesitaAgua(maceta)) regar(maceta);
+    const objeto = estado.semillaSeleccionada;
+    if (objeto === "saco-tierra" && macetaAcepta(maceta, objeto)) llenarConTierra(maceta);
+    else if (objeto && macetaAcepta(maceta, objeto)) plantar(maceta, objeto);
+    else if (estado.regaderaSeleccionada && necesitaAgua(maceta)) regarConAnimacion(maceta);
   });
+}
+MACETAS.forEach(conectarZona);
+
+// ---------- Macetas nuevas: comprar la maceta, ponerla en el piso, llenarla de tierra ----------
+const lugaresMacetas = LUGARES_MACETAS.map((lugar) => {
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.className = "lugar-maceta";
+  boton.hidden = true;
+  boton.setAttribute("aria-label", "Poner la maceta aquí");
+  boton.style.setProperty("--mx", lugar.x);
+  boton.style.setProperty("--my", lugar.y);
+  boton.addEventListener("click", () => colocarMaceta(lugar));
+  lugar.boton = boton;
+  lugar.ocupado = false;
+  return lugar;
 });
+document.getElementById("icono-gota-izq").after(...lugaresMacetas.map((l) => l.boton));
+
+function hayLugarLibre() {
+  return lugaresMacetas.some((l) => !l.ocupado);
+}
+
+// Los lugares libres se marcan solo mientras llevas una maceta en la mano
+function actualizarLugares() {
+  const conMaceta = estado.semillaSeleccionada === "maceta-terracota";
+  lugaresMacetas.forEach((l) => { l.boton.hidden = !(conMaceta && !l.ocupado); });
+}
+
+function crearMacetaNueva(lugar) {
+  const numero = MACETAS.length - 1;
+  const fijar = (el) => { el.style.setProperty("--mx", lugar.x); el.style.setProperty("--my", lugar.y); return el; };
+
+  const sombra = fijar(elemento("span", "maceta-sombra maceta-nueva-sombra"));
+  sombra.setAttribute("aria-hidden", "true");
+
+  const sprite = fijar(elemento("button", "maceta-sprite maceta-nueva"));
+  sprite.type = "button";
+  sprite.disabled = true;
+  sprite.setAttribute("aria-label", "Maceta nueva");
+  const imagenMaceta = document.createElement("img");
+  imagenMaceta.src = "assets/plantas/maceta-sin-tierra.png";
+  imagenMaceta.alt = "";
+  imagenMaceta.draggable = false;
+  sprite.appendChild(imagenMaceta);
+
+  const planta = fijar(elemento("img", "planta"));
+  planta.alt = "";
+  planta.hidden = true;
+
+  const zona = fijar(elemento("button", "zona-maceta zona-nueva vacia"));
+  zona.type = "button";
+  zona.disabled = true;
+  zona.setAttribute("aria-label", "Maceta nueva " + numero);
+
+  const relleno = elemento("div", "barra-relleno");
+  const barra = fijar(elemento("div", "barra-crecimiento barra-nueva"));
+  barra.setAttribute("role", "progressbar");
+  barra.setAttribute("aria-label", "Crecimiento de la planta");
+  barra.setAttribute("aria-valuemin", "0");
+  barra.setAttribute("aria-valuemax", "100");
+  barra.setAttribute("aria-valuenow", "0");
+  barra.hidden = true;
+  barra.appendChild(relleno);
+
+  const gota = fijar(elemento("img", "icono-gota gota-nueva"));
+  gota.src = "assets/plantas/icono-gota.png";
+  gota.alt = "La planta tiene sed";
+  gota.hidden = true;
+
+  // Sombra, maceta y planta van dentro del fondo (se desenfocan con él); lo demás, sobre la escena
+  document.getElementById("escena-fondo").append(sombra, sprite, planta);
+  document.getElementById("icono-gota-izq").after(zona, barra, gota);
+
+  const maceta = {
+    nombre: "nueva-" + numero, x: lugar.x, y: lugar.y,
+    sprite, sombra, zona, planta, barra, relleno, gota,
+    extra: true,          // maceta comprada (no es una de las dos del tutorial)
+    sinTierra: true,      // hay que llenarla con un saco de tierra
+    levantada: true,
+    especie: null, etapa: "ninguna", progreso: 0,
+    pausada: false, regada: false, terminada: false
+  };
+  MACETAS.push(maceta);
+  conectarZona(maceta);
+  return maceta;
+}
+
+function colocarMaceta(lugar) {
+  if (lugar.ocupado || estado.semillaSeleccionada !== "maceta-terracota") return;
+  lugar.ocupado = true;
+  estado.macetasColocadas++;
+  estado.inventario["maceta-terracota"] = Math.max(0, (estado.inventario["maceta-terracota"] || 0) - 1);
+  const maceta = crearMacetaNueva(lugar);
+  maceta.sprite.classList.add("cayendo");
+  setTimeout(() => maceta.sprite.classList.remove("cayendo"), 700);
+  sonarPlop();
+  seleccionarSemilla(null);
+  dibujarInventario();
+}
+
+function llenarConTierra(maceta) {
+  if (!macetaAcepta(maceta, "saco-tierra")) return;
+  maceta.sinTierra = false;
+  estado.inventario["saco-tierra"] = Math.max(0, (estado.inventario["saco-tierra"] || 0) - 1);
+  maceta.sprite.querySelector("img").src = "assets/plantas/maceta-vacia.png";
+  maceta.sprite.classList.add("rellenando");
+  setTimeout(() => maceta.sprite.classList.remove("rellenando"), 600);
+  sonarPlop();
+  seleccionarSemilla(null);
+  dibujarInventario();
+}
+
+// La regadera se acomoda sobre la maceta, se inclina y suelta gotitas; después la planta recibe el agua
+let regando = false;
+const DURACION_RIEGO = 2300;   // milisegundos que dura la animación
+
+function regarConAnimacion(maceta) {
+  if (regando) return;
+  regando = true;
+  const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const caja = escena.getBoundingClientRect();
+  const zona = maceta.zona.getBoundingClientRect();
+  const ancho = caja.width * 0.09;   // ancho de la regadera mientras riega (igual que en el CSS)
+
+  // 1) Se coloca arriba de la planta, con el pico mirando hacia ella
+  regaderaCursor.hidden = false;
+  regaderaCursor.classList.add("regando");
+  const centroX = zona.left - caja.left + zona.width * 0.5;
+  const arriba = zona.top - caja.top + zona.height * 0.03;
+  regaderaCursor.style.left = (centroX - ancho * 0.54) + "px";
+  regaderaCursor.style.top = arriba + "px";
+
+  // 2) Se inclina y suena el agua
+  setTimeout(() => {
+    regaderaCursor.classList.add("inclinada");
+    sonarRegar();
+    if (reducir) return;
+    const gotas = document.createElement("div");
+    gotas.className = "gotas-riego";
+    gotas.style.left = centroX + "px";
+    gotas.style.top = (arriba + ancho * 0.04) + "px";
+    gotas.style.setProperty("--caida", (zona.height * 0.5) + "px");
+    for (let i = 0; i < 9; i++) {
+      const gota = document.createElement("span");
+      gota.style.setProperty("--retraso", (i * 0.12) + "s");
+      gota.style.setProperty("--desvio", ((i % 3) - 1) * 0.6 + "cqw");
+      gotas.appendChild(gota);
+    }
+    escena.appendChild(gotas);
+    setTimeout(() => gotas.remove(), DURACION_RIEGO);
+  }, reducir ? 0 : 450);
+
+  // 3) La planta recibe el agua
+  setTimeout(() => {
+    regaderaCursor.classList.remove("regando", "inclinada");
+    regaderaCursor.style.left = "";
+    regaderaCursor.style.top = "";
+    regando = false;
+    regar(maceta);
+  }, reducir ? 900 : DURACION_RIEGO);
+}
 
 function regar(maceta) {
   const eraResecaDeNuevo = maceta.terminada;   // true = ya había florecido y se volvió a secar
@@ -1901,7 +2552,10 @@ const VUELO = {
   descansoMin: 3,      // segundos mínimos fuera de la pantalla antes de volver
   descansoMax: 8,      // segundos máximos fuera de la pantalla
   margen: 9,           // qué tanto sale de la pantalla antes de desaparecer
-  cambioDeSentido: 0.35 // probabilidad (0 a 1) de que la próxima pasada sea en sentido contrario
+  cambioDeSentido: 0.35, // probabilidad (0 a 1) de que la próxima pasada sea en sentido contrario
+  paradaProb: 0.2,     // probabilidad (0 a 1) de que en una pasada se detenga a mostrarse de frente
+  paradaMin: 3,        // segundos mínimos que se queda quieto de frente
+  paradaMax: 5         // segundos máximos
 };
 
 const prefiereQuietud = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1913,7 +2567,9 @@ const vuelo = {
   fase: 0,
   tiempo: 0,
   descanso: 0,
-  ultimo: 0
+  ultimo: 0,
+  puntoParada: null,   // posición (en cqw) donde se detendrá en esta pasada, o null
+  parada: 0            // segundos que le quedan detenido
 };
 
 function numeroEntre(minimo, maximo) {
@@ -1933,6 +2589,7 @@ function nuevaPasada() {
   vuelo.fase = numeroEntre(0, Math.PI * 2);
   vuelo.tiempo = 0;
   vuelo.x = vuelo.direccion > 0 ? -VUELO.margen : 100 + VUELO.margen;
+  vuelo.puntoParada = (!prefiereQuietud && Math.random() < VUELO.paradaProb) ? numeroEntre(22, 78) : null;
   // El dibujo mira hacia la derecha: si va hacia la izquierda, se da vuelta
   poloVueloVoltea.classList.toggle("izquierda", vuelo.direccion < 0);
 }
@@ -1951,7 +2608,19 @@ function volarPololo(ahora) {
   }
 
   vuelo.tiempo += pasado;
-  vuelo.x += vuelo.direccion * VUELO.velocidad * pasado;
+  if (vuelo.parada > 0) {
+    // Detenido, mostrándose de frente
+    vuelo.parada -= pasado;
+    if (vuelo.parada <= 0) poloVuelo.classList.remove("de-frente");
+  } else {
+    vuelo.x += vuelo.direccion * VUELO.velocidad * pasado;
+    const llego = vuelo.direccion > 0 ? vuelo.x >= vuelo.puntoParada : vuelo.x <= vuelo.puntoParada;
+    if (vuelo.puntoParada !== null && llego) {
+      vuelo.puntoParada = null;
+      vuelo.parada = numeroEntre(VUELO.paradaMin, VUELO.paradaMax);
+      poloVuelo.classList.add("de-frente");
+    }
+  }
 
   // Sube y baja suavemente mientras avanza
   const frecuencia = (Math.PI * 2) / VUELO.periodo;
@@ -1960,7 +2629,7 @@ function volarPololo(ahora) {
 
   // Inclina el cuerpo según suba o baje
   const pendiente = velocidadVertical / VUELO.velocidad;
-  const angulo = Math.max(-15, Math.min(15, vuelo.direccion * Math.atan(pendiente) * 180 / Math.PI));
+  const angulo = vuelo.parada > 0 ? 0 : Math.max(-15, Math.min(15, vuelo.direccion * Math.atan(pendiente) * 180 / Math.PI));
   ponerPololo(vuelo.x, y, angulo);
   actualizarSonidoVuelo(vuelo.x);
 
@@ -1984,3 +2653,320 @@ function iniciarVueloLibre() {
   vuelo.ultimo = performance.now();
   requestAnimationFrame(volarPololo);
 }
+
+
+// ---------- Abejorro colorado ----------
+// Al plantar la primera rosa: se oye un zumbido, el pololo avisa, el abejorro vuela escondido
+// (se oye más fuerte cuanto más cerca) y por fin aparece volando. Hay que hacerle clic.
+const abejorroEl = document.getElementById("abejorro-vuelo");
+const abejorroVoltea = document.getElementById("abejorro-voltea");
+const abejorroBoton = document.getElementById("abejorro-boton");
+
+// Ajustes que puedes cambiar (distancias en cqw, tiempos en segundos)
+const ABEJORRO = {
+  velocidad: 5.5,        // qué tan rápido vuela (más alto = más rápido)
+  alturaMin: 16,
+  alturaMax: 34,
+  ondulacion: 3.5,
+  periodo: 6,
+  margen: 11,            // qué tanto sale de la pantalla antes de desaparecer
+  distanciaInicial: 80,  // desde qué tan lejos (fuera de la pantalla) empieza a acercarse
+  volumenLejano: 0.2,    // volumen del zumbido cuando aún está muy lejos (0 a 1)
+  esperaTrasFlor: 10,    // segundos entre que la rosa florece y empieza a oírse el zumbido
+  esperaAviso: 3.5,      // segundos entre que empieza el zumbido y el aviso del pololo
+  descansoMin: 2,
+  descansoMax: 5,
+  paradaProb: 0.2,       // probabilidad (0 a 1) de que en una pasada se detenga a mostrarse de frente
+  paradaMin: 3,
+  paradaMax: 5
+};
+
+const abejorro = {
+  fase: "inactivo",      // inactivo, oculto, visible, charla, libre
+  direccion: -1,
+  x: 0,
+  alturaBase: 24,
+  fasePeriodo: 0,
+  tiempo: 0,
+  descanso: 0,
+  ultimo: 0,
+  puntoParada: null,
+  parada: 0
+};
+
+function ponerAbejorro(x, y, angulo) {
+  abejorroEl.style.transform =
+    "translate(" + x.toFixed(2) + "cqw, " + y.toFixed(2) + "cqw) rotate(" + angulo.toFixed(1) + "deg)";
+}
+
+// Volumen del zumbido: 0 a 1 según qué tan cerca está
+function sonarAbejorro(cercania) {
+  if (!sonidoPermitido || cercania === null) {
+    if (!sonidoAbejorro.paused) sonidoAbejorro.pause();
+    return;
+  }
+  const volumen = Math.min(1, ajustes.volumenAleteo * GANANCIA_VUELO * cercania);
+  sonidoAbejorro.volume = volumen;
+  if (volumen > 0.003) {
+    if (sonidoAbejorro.paused) sonidoAbejorro.play().catch(() => {});
+  } else if (!sonidoAbejorro.paused) {
+    sonidoAbejorro.pause();
+  }
+}
+
+function cuandoGuiaLibre(accion) {
+  if (guia.hidden) accion();
+  else setTimeout(() => cuandoGuiaLibre(accion), 500);
+}
+
+// Cambia al pololo o al abejorro como quien habla en el globo de diálogo
+const capasPololoOriginales = document.querySelector("#guia .guia-capas").innerHTML;
+function ponerGuia(quien) {
+  const capas = document.querySelector("#guia .guia-capas");
+  const nombre = document.querySelector("#guia .globo-nombre");
+  const esAbejorro = quien === "abejorro";
+  guia.classList.toggle("es-abejorro", esAbejorro);
+  capas.classList.toggle("capas-abejorro", esAbejorro);
+  nombre.textContent = esAbejorro ? "Abejorro colorado" : "Pololo verde";
+  if (esAbejorro) capas.replaceChildren(...capasAbejorro());
+  else capas.innerHTML = capasPololoOriginales;
+}
+
+const PASOS_ZUMBIDO = [
+  { texto: "¿Escuchaste eso?", desenfoque: false },
+  { texto: "Es momento de prestarle atención a tu entorno.", desenfoque: false }
+];
+
+const PASOS_ABEJORRO = [
+  { texto: "¡Wow, holaaa! ¡Qué lindo lugar! Me presento: soy el Abejorro colorado, el abejorro más grande del país." },
+  { texto: "Actualmente estoy en peligro de extinción, así que te agradecería que cuidaras de mi especie." },
+  { texto: "Me gustó tu terraza. Si no te molesta, me quedaré por aquí." }
+];
+
+function iniciarEventoAbejorro() {
+  if (abejorro.fase !== "inactivo" || estado.abejorroListo) return;
+  abejorro.fase = "oculto";
+  // Entra por la derecha o por la izquierda, 50 y 50, para que no se sepa por dónde saldrá
+  abejorro.direccion = Math.random() < 0.5 ? -1 : 1;
+  abejorro.x = abejorro.direccion < 0
+    ? 100 + ABEJORRO.margen + ABEJORRO.distanciaInicial
+    : -ABEJORRO.margen - ABEJORRO.distanciaInicial;
+  abejorro.alturaBase = numeroEntre(ABEJORRO.alturaMin, ABEJORRO.alturaMax);
+  abejorro.fasePeriodo = numeroEntre(0, Math.PI * 2);
+  abejorro.tiempo = 0;
+  abejorroVoltea.classList.toggle("izquierda", abejorro.direccion < 0);
+  abejorroEl.hidden = false;
+  abejorro.ultimo = performance.now();
+  requestAnimationFrame(volarAbejorro);
+
+  // El pololo avisa un momento después de empezar a oírse el zumbido
+  setTimeout(() => {
+    cuandoGuiaLibre(() => {
+      iniciarSecuencia(PASOS_ZUMBIDO, () => {
+        ponerMision("Presta atención: ¿de dónde viene ese zumbido?");
+      });
+    });
+  }, ABEJORRO.esperaAviso * 1000);
+}
+
+function mostrarAbejorro(clicable) {
+  abejorroEl.classList.add("visible");
+  abejorroEl.classList.toggle("clicable", clicable);
+  abejorroBoton.disabled = !(clicable || abejorro.fase === "libre");
+}
+
+function volarAbejorro(ahora) {
+  if (abejorro.fase === "inactivo") return;
+  requestAnimationFrame(volarAbejorro);
+  const pasado = Math.min((ahora - abejorro.ultimo) / 1000, 0.1);
+  abejorro.ultimo = ahora;
+
+  // Mientras charla con el jugador, se queda quieto (y casi no se oye)
+  if (abejorro.fase === "charla") {
+    sonarAbejorro(0.25);
+    return;
+  }
+
+  // Para quien prefiere menos movimiento: el abejorro se queda parado en un lugar visible
+  if (prefiereQuietud && (abejorro.fase === "visible" || abejorro.fase === "libre")) {
+    ponerAbejorro(58, 22, 0);
+    mostrarAbejorro(abejorro.fase === "visible");
+    sonarAbejorro(0.4);
+    return;
+  }
+
+  // Descansando fuera de la pantalla entre una pasada y otra
+  if (abejorro.descanso > 0) {
+    sonarAbejorro(null);
+    abejorro.descanso -= pasado;
+    if (abejorro.descanso <= 0) nuevaPasadaAbejorro();
+    return;
+  }
+
+  // Cuánto ha entrado en la zona visible (negativo = todavía está fuera de la pantalla)
+  const adentro = abejorro.direccion < 0 ? (100 + ABEJORRO.margen) - abejorro.x : abejorro.x + ABEJORRO.margen;
+  const esperando = abejorro.fase === "oculto" && !guia.hidden && adentro > -25;
+  if (abejorro.parada > 0) {
+    // Detenido, mostrándose de frente
+    abejorro.tiempo += pasado;
+    abejorro.parada -= pasado;
+    if (abejorro.parada <= 0) abejorroEl.classList.remove("de-frente");
+  } else if (!esperando) {
+    abejorro.tiempo += pasado;
+    abejorro.x += abejorro.direccion * ABEJORRO.velocidad * pasado;
+    if (abejorro.puntoParada !== null && abejorro.fase === "libre") {
+      const llego = abejorro.direccion > 0 ? abejorro.x >= abejorro.puntoParada : abejorro.x <= abejorro.puntoParada;
+      if (llego) {
+        abejorro.puntoParada = null;
+        abejorro.parada = numeroEntre(ABEJORRO.paradaMin, ABEJORRO.paradaMax);
+        abejorroEl.classList.add("de-frente");
+      }
+    }
+  }
+
+  // Sube y baja suavemente, como el pololo
+  const frecuencia = (Math.PI * 2) / ABEJORRO.periodo;
+  const fase = frecuencia * abejorro.tiempo + abejorro.fasePeriodo;
+  const y = abejorro.alturaBase + ABEJORRO.ondulacion * Math.sin(fase);
+  const pendiente = ABEJORRO.ondulacion * frecuencia * Math.cos(fase) / ABEJORRO.velocidad;
+  const angulo = abejorro.parada > 0 ? 0 : Math.max(-12, Math.min(12, abejorro.direccion * Math.atan(pendiente) * 180 / Math.PI));
+  ponerAbejorro(abejorro.x, y, angulo);
+
+  // Volumen según la distancia a la pantalla
+  const fuera = abejorro.x < 0 ? -abejorro.x : (abejorro.x > 100 ? abejorro.x - 100 : 0);
+  if (abejorro.fase === "oculto") {
+    const lejos = Math.min(1, fuera / (ABEJORRO.margen + ABEJORRO.distanciaInicial));
+    sonarAbejorro(ABEJORRO.volumenLejano + (1 - ABEJORRO.volumenLejano) * (1 - lejos));
+  } else {
+    sonarAbejorro(Math.max(0, 1 - fuera / ABEJORRO.margen));
+  }
+
+  // Llegó al borde de la pantalla: por fin aparece volando
+  if (abejorro.fase === "oculto" && adentro >= 0) {
+    abejorro.fase = "visible";
+    mostrarAbejorro(true);
+    ponerMision(null);   // sin pista: que la persona lo descubra sola
+  }
+
+  const salioDerecha = abejorro.direccion > 0 && abejorro.x > 100 + ABEJORRO.margen;
+  const salioIzquierda = abejorro.direccion < 0 && abejorro.x < -ABEJORRO.margen;
+  if ((abejorro.fase === "visible" || abejorro.fase === "libre") && (salioDerecha || salioIzquierda)) {
+    abejorro.descanso = numeroEntre(ABEJORRO.descansoMin, ABEJORRO.descansoMax);
+  }
+}
+
+function nuevaPasadaAbejorro() {
+  if (Math.random() < 0.35) abejorro.direccion *= -1;
+  abejorro.alturaBase = numeroEntre(ABEJORRO.alturaMin, ABEJORRO.alturaMax);
+  abejorro.fasePeriodo = numeroEntre(0, Math.PI * 2);
+  abejorro.tiempo = 0;
+  abejorro.x = abejorro.direccion > 0 ? -ABEJORRO.margen : 100 + ABEJORRO.margen;
+  abejorro.puntoParada = (abejorro.fase === "libre" && !prefiereQuietud && Math.random() < ABEJORRO.paradaProb) ? numeroEntre(22, 78) : null;
+  abejorroVoltea.classList.toggle("izquierda", abejorro.direccion < 0);
+  // Desde la segunda pasada vuelve a verse (ya fuera de la pantalla, sin saltos)
+  if (abejorro.fase === "libre") mostrarAbejorro(false);
+}
+
+// Clic en el abejorro: sale de frente y se presenta
+const sonidoAbejorroApretado = new Audio("assets/sonidos/abejorro-apretado.mp3");
+sonidoAbejorroApretado.preload = "auto";
+let temporizadorApreton2 = null;
+
+abejorroBoton.addEventListener("click", () => {
+  if (abejorro.fase === "libre") {
+    // Ya es amigo: al hacerle clic se "aprieta" y suena
+    sonidoAbejorroApretado.volume = ajustes.volumenBotones;
+    sonidoAbejorroApretado.currentTime = 0;
+    sonidoAbejorroApretado.play().catch(() => {});
+    abejorroEl.classList.remove("apretado");
+    void abejorroEl.offsetWidth;
+    abejorroEl.classList.add("apretado");
+    clearTimeout(temporizadorApreton2);
+    temporizadorApreton2 = setTimeout(() => abejorroEl.classList.remove("apretado"), 450);
+    return;
+  }
+  if (abejorro.fase !== "visible") return;
+  abejorro.fase = "charla";
+  abejorroEl.classList.remove("de-frente");
+  abejorroEl.classList.add("sin-fade");   // desaparece de inmediato, sin atenuarse
+  abejorroEl.classList.remove("visible", "clicable");
+  abejorroBoton.disabled = true;
+  abejorroEl.classList.remove("apretable");
+  setTimeout(() => abejorroEl.classList.remove("sin-fade"), 100);
+  quitarResaltado();
+  ponerGuia("abejorro");
+  ponerMision(null);
+  iniciarSecuencia(PASOS_ABEJORRO, () => {
+    ponerGuia("pololo");
+    estado.abejorroListo = true;
+    // Se queda por la terraza (ya no hay que hacerle clic)
+    // (arranca fuera de la pantalla: no vuelve a verse en el lugar donde se quedó)
+    abejorro.fase = "libre";
+    abejorro.descanso = 2;
+    abejorro.direccion = Math.random() < 0.5 ? -1 : 1;
+    abejorroBoton.disabled = false;
+    abejorroEl.classList.add("apretable");
+    // El diario se ilumina: ahí aparece el nuevo descubrimiento
+    descubrirInsecto("abejorro");
+    objetivoDiarioActivo = true;
+    ponerMision("Abre tu diario de campo: ¡hay un insecto nuevo!");
+  });
+});
+
+
+// Cuando el pololo grande aparece a hablar, el pequeñito que vuela al fondo desaparece;
+// al despedirse, el pequeñito vuelve a verse
+function revisarPoloDelFondo() {
+  poloEnGuia = !guia.hidden && !guia.classList.contains("es-abejorro");
+  poloVuelo.classList.toggle("oculto-guia", poloEnGuia);
+}
+new MutationObserver(revisarPoloDelFondo).observe(guia, { attributes: true, attributeFilter: ["hidden", "class"] });
+
+
+// Versión "de frente" de cada volador: aparece cuando se detienen un momento a mostrarse
+function crearFrenteVuelo(capas, claseExtra) {
+  const caja = document.createElement("div");
+  caja.className = "vuelo-frente";
+  caja.setAttribute("aria-hidden", "true");
+  const c = document.createElement("div");
+  c.className = "guia-capas" + (claseExtra ? " " + claseExtra : "");
+  c.append(...capas);
+  caja.appendChild(c);
+  return caja;
+}
+poloVuelo.appendChild(crearFrenteVuelo(
+  [
+    ["capa ala ala-izq", "assets/pololo/pololo-ala-izq.png"],
+    ["capa ala ala-der", "assets/pololo/pololo-ala-der.png"],
+    ["pololo-cuerpo", "assets/pololo/pololo-cuerpo.png"],
+    ["capa parpados", "assets/pololo/pololo-parpados.png"]
+  ].map(([clase, ruta]) => {
+    const pieza = document.createElement("img");
+    pieza.className = clase;
+    pieza.src = ruta;
+    pieza.alt = "";
+    return pieza;
+  })
+));
+abejorroEl.appendChild(crearFrenteVuelo(capasAbejorro(), "capas-abejorro"));
+
+
+// ---------- Clic sobre el pololo volando: se "aprieta" y suena ----------
+const sonidoPoloApretado = new Audio("assets/sonidos/pololo-apretado.mp3");
+sonidoPoloApretado.preload = "auto";
+let temporizadorApreton = null;
+
+poloVuelo.addEventListener("click", () => {
+  sonidoPoloApretado.volume = ajustes.volumenBotones;
+  sonidoPoloApretado.currentTime = 0;
+  sonidoPoloApretado.play().catch(() => {});
+  // Reinicia la animación aunque se haga clic varias veces seguidas
+  poloVuelo.classList.remove("apretado");
+  void poloVuelo.offsetWidth;
+  poloVuelo.classList.add("apretado");
+  clearTimeout(temporizadorApreton);
+  temporizadorApreton = setTimeout(() => poloVuelo.classList.remove("apretado"), 450);
+});
+
+// Un clic sobre la versión "de frente" del abejorro cuenta como clic en el abejorro
+abejorroEl.querySelector(".vuelo-frente").addEventListener("click", () => abejorroBoton.click());

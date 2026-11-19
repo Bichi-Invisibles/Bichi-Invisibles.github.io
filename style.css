@@ -564,6 +564,8 @@ button.nivel:focus-visible:not(:disabled) {
 
 /* Alas detrás del cuerpo (si quieres una por delante, cambia su z-index a 3) */
 .ala { z-index: 0; }
+/* Pololo: las alas cafés van por delante de las verdes (el abejorro mantiene las suyas atrás) */
+.guia-capas:not(.capas-abejorro) .ala { z-index: 3; }
 
 .ala-izq {
   transform-origin: var(--origen-ala-izq);
@@ -2255,3 +2257,978 @@ button.nivel:focus-visible:not(:disabled) {
 .ficha-cerrar svg { width: 100%; height: 100%; }
 .ficha-cerrar:hover { border-color: var(--olive-leaf); }
 .ficha-cerrar:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 3px; }
+
+
+
+/* ================= AJUSTES v6 ================= */
+
+/* --- Fondo de hojas en movimiento a los costados de la partida --- */
+.partida { position: relative; }
+
+.partida::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("assets/fondos/fondo-inicio.gif") center / cover no-repeat;
+  opacity: 0.15;   /* igual que en la portada */
+  z-index: 0;
+}
+
+.partida > .escena { z-index: 1; }
+
+/* --- Zona de clic de las macetas: ahora cubre también la planta --- */
+#zona-maceta {
+  left: 78.5cqw;
+  top: 11cqw;
+  width: 13.4cqw;
+  height: 20.5cqw;
+  border-radius: 3cqw;
+}
+
+#zona-maceta-izq {
+  left: 10.4cqw;
+  top: 11cqw;
+  width: 13.4cqw;
+  height: 20.5cqw;
+  border-radius: 3cqw;
+}
+
+.zona-maceta:not(:disabled) { cursor: pointer; }
+.zona-maceta:not(:disabled):hover { background: rgba(141, 173, 78, 0.18); }
+
+/* La maceta que espera la semilla que llevas en la mano */
+.zona-maceta.objetivo {
+  outline: 0.4cqw dashed var(--olive-leaf);
+  outline-offset: 0.3cqw;
+  background: rgba(141, 173, 78, 0.18);
+  animation: objetivo 1.2s ease-in-out infinite;
+}
+
+@keyframes objetivo {
+  0%, 100% { background-color: rgba(141, 173, 78, 0.12); }
+  50%      { background-color: rgba(141, 173, 78, 0.32); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zona-maceta.objetivo { animation: none; }
+}
+
+/* Las casillas de semillas también se eligen con un clic */
+.slot-dinamico:not(:disabled) { cursor: pointer; }
+
+/* --- Menú del costado: botones más grandes y con nombre al pasar el cursor --- */
+.menu-boton {
+  position: relative;
+  width: clamp(60px, 6.6cqw, 116px);
+  padding: 0.3cqw;
+}
+
+.menu-boton[data-nombre]::after {
+  content: attr(data-nombre);
+  position: absolute;
+  left: calc(100% + 1.4cqw);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  white-space: nowrap;
+  padding: 0.5cqw 1.3cqw;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: clamp(14px, 1.8cqw, 28px);
+  color: var(--coffee-bean);
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 1.2cqw;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 30;
+}
+
+.menu-boton[data-nombre]:hover::after,
+.menu-boton[data-nombre]:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+/* --- Recuadro de misión --- */
+.mision {
+  position: absolute;
+  top: 1.4cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  max-width: 54cqw;
+  padding: 0.7cqw 1.8cqw 0.7cqw 0.8cqw;
+  font-size: clamp(13px, 1.7cqw, 26px);
+  background: rgba(247, 245, 240, 0.93);
+  border: 0.3cqw solid var(--coffee-bean);
+  border-radius: 2.4cqw;
+  box-shadow: 0 0.5cqw 1.4cqw rgba(45, 49, 46, 0.2);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.mision-etiqueta {
+  padding: 0.25em 0.8em;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--parchment);
+  background: var(--olive-leaf);
+  border-radius: 999px;
+}
+
+.mision-texto {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--gunmetal);
+}
+
+.mision-progreso {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--olive-leaf);
+}
+
+.mision-progreso:empty { display: none; }
+
+.mision.nueva { animation: mision-entra 0.5s ease-out; }
+
+@keyframes mision-entra {
+  0%   { opacity: 0; transform: translate(-50%, -1.5cqw); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.mision.cumplida {
+  background: var(--jasmine);
+  border-color: var(--olive-leaf);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mision.nueva { animation: none; }
+}
+
+/* --- Pantalla de bienvenida: solo la hoja, más grande, que sigue latiendo --- */
+.intro-continuar {
+  width: clamp(88px, 11vw, 140px);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.intro-continuar:hover:not(:disabled) {
+  background: none;
+  filter: brightness(1.12) saturate(1.15);
+}
+
+/* Apagada hasta aceptar: sin latido, tenue y en grises */
+.intro-continuar:disabled {
+  border: 0;
+  opacity: 0.4;
+  filter: grayscale(0.7);
+}
+
+/* --- Mensaje temporal junto al engranaje --- */
+.aviso-config {
+  position: fixed;
+  left: 84px;
+  top: 14px;
+  z-index: 90;
+  max-width: min(380px, calc(100vw - 104px));
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--gunmetal);
+  background: var(--parchment);
+  border: 3px solid var(--coffee-bean);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(45, 49, 46, 0.2);
+  animation: aviso-entra 0.4s ease-out;
+  transition: opacity 0.5s;
+}
+
+.aviso-config.saliendo { opacity: 0; }
+
+/* Colita que apunta al engranaje */
+.aviso-config::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 18px;
+  width: 16px;
+  height: 16px;
+  background: var(--parchment);
+  border-left: 3px solid var(--coffee-bean);
+  border-bottom: 3px solid var(--coffee-bean);
+  transform: rotate(45deg);
+}
+
+@keyframes aviso-entra {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso-config { animation: none; }
+}
+
+
+/* ================= AJUSTES v7 ================= */
+
+/* --- Carnet: foto y tiempos a la izquierda, datos a la derecha y el mapa en horizontal abajo --- */
+.ficha {
+  grid-template-columns: 27% 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+/* La foto solo ocupa lo que necesita el dibujo */
+.ficha-foto { flex: 0 0 auto; padding: 3.2cqw 1cqw 3cqw; }   /* el pololo sube y baja, por eso lleva aire arriba y abajo */
+.ficha-texto { gap: 0.8cqw; }
+
+.campo-fila-3 { grid-template-columns: 1.35fr 1fr 1fr; }
+
+.campo-cientifico {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: max(13px, 1.7cqw);
+  color: var(--olive-leaf);
+}
+
+/* Mapa de Chile (horizontal, el norte a la izquierda): las regiones donde vive se iluminan */
+.ficha-mapa-caja {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6cqw;
+  padding: 0.7cqw 2cqw;
+  background: radial-gradient(circle at 50% 40%, #FFFBEF 0%, #DDE8C2 100%);
+  border: 0.3cqw solid var(--olive-leaf);
+  border-radius: 1.6cqw;
+}
+
+.ficha-mapa-caja[hidden] { display: none; }
+
+.mapa-info { display: flex; flex-direction: column; max-width: 16cqw; }
+
+.ficha-mapa-texto {
+  font-size: max(13px, 1.7cqw);
+  line-height: 1.2;
+  color: var(--gunmetal);
+}
+
+.mapa-punto {
+  font-family: var(--font-heading);
+  font-size: max(10px, 1.1cqw);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--coffee-bean);
+}
+
+.ficha-mapa {
+  position: relative;
+  height: 8cqw;
+  aspect-ratio: 730 / 153;
+}
+
+.ficha-mapa img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Las regiones donde NO vive quedan apagadas */
+.mapa-base { filter: grayscale(1); opacity: 0.4; }
+
+.mapa-region {
+  filter: drop-shadow(0 0 0.5cqw rgba(244, 208, 111, 0.95)) drop-shadow(0 0 0.15cqw var(--jasmine));
+  animation: region-brilla 2.4s ease-in-out infinite;
+}
+
+@keyframes region-brilla {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+/* --- Partes del cuerpo que se iluminan en el pololo del carnet --- */
+.partes-cuerpo {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.parte-cuerpo {
+  position: absolute;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%) rotate(var(--giro, 0deg)) scale(0.85);
+  border-radius: 50%;
+  border: 0.35cqw solid var(--jasmine);
+  background: rgba(244, 208, 111, 0.35);
+  box-shadow: 0 0 1.2cqw 0.4cqw rgba(244, 208, 111, 0.9), 0 0 0 0.15cqw var(--coffee-bean);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.parte-cuerpo.parte-redonda { border-style: dashed; background: rgba(244, 208, 111, 0.12); border-radius: 45%; }
+
+.parte-cuerpo.activa {
+  opacity: 1;
+  transform: translate(-50%, -50%) rotate(var(--giro, 0deg)) scale(1);
+  animation: parte-late 1.1s ease-in-out infinite;
+}
+
+@keyframes parte-late {
+  0%, 100% { box-shadow: 0 0 1.2cqw 0.4cqw rgba(244, 208, 111, 0.9), 0 0 0 0.15cqw var(--coffee-bean); }
+  50%      { box-shadow: 0 0 2cqw 0.8cqw rgba(244, 208, 111, 1), 0 0 0 0.15cqw var(--coffee-bean); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-region, .parte-cuerpo.activa { animation: none; }
+}
+
+/* Filas de la tabla macho/hembra: se marcan al pasar el cursor */
+.sexo-tabla tr:not(:first-child) { cursor: help; }
+.sexo-tabla tr.fila-activa th,
+.sexo-tabla tr.fila-activa td { background: rgba(244, 208, 111, 0.55); }
+.sexo-tabla tr:not(:first-child):focus-visible { outline: 3px solid var(--jasmine); outline-offset: -2px; }
+
+/* ======================================================================
+   TAMAÑOS QUE PUEDES AJUSTAR (cambia solo los números)
+   ====================================================================== */
+:root {
+  /* Botones del menú del costado (Tienda, Diario de campo, Hotel). Más grande = número mayor.
+     Formato: clamp(mínimo, tamaño según la pantalla, máximo) */
+  --menu-ancho: clamp(50px, 5.2cqw, 92px);
+
+  /* "Caja de clic" de las macetas: la zona donde se planta y se riega.
+     ancho / alto = tamaño; izquierda y arriba = posición dentro de la escena */
+  --golpe-ancho: 13.4cqw;
+  --golpe-alto: 20.5cqw;
+  --golpe-arriba: 11cqw;
+  --golpe-izq-maceta-derecha: 78.5cqw;
+  --golpe-izq-maceta-izquierda: 10.4cqw;
+}
+
+.menu-boton { width: var(--menu-ancho); }
+
+#zona-maceta, #zona-maceta-izq {
+  top: var(--golpe-arriba);
+  width: var(--golpe-ancho);
+  height: var(--golpe-alto);
+}
+#zona-maceta { left: var(--golpe-izq-maceta-derecha); }
+#zona-maceta-izq { left: var(--golpe-izq-maceta-izquierda); }
+
+/* Con ?cajas al final de la dirección se ven las zonas de clic */
+.ver-cajas .zona-maceta,
+.ver-cajas .zona-regadera {
+  outline: 2px dashed #c0392b;
+  background: rgba(192, 57, 43, 0.22) !important;
+}
+
+/* --- Regadera: se acomoda sobre la maceta y se inclina para regar --- */
+.regadera-cursor.regando {
+  width: 9cqw;
+  transition: left 0.4s ease-in-out, top 0.4s ease-in-out;
+}
+
+.regadera-cursor {
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.regadera-cursor.inclinada {
+  transform: translate(-50%, -50%) rotate(38deg);
+  transition: transform 0.5s ease-in-out;
+  animation: regadera-tiembla 0.25s ease-in-out 0.5s 6 alternate;
+}
+
+@keyframes regadera-tiembla {
+  from { margin-top: 0; }
+  to   { margin-top: 0.25cqw; }
+}
+
+.gotas-riego {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 19;
+  pointer-events: none;
+}
+
+.gotas-riego span {
+  position: absolute;
+  left: var(--desvio, 0);
+  top: 0;
+  width: 0.7cqw;
+  height: 1.1cqw;
+  border-radius: 50% 50% 55% 55%;
+  background: rgba(150, 205, 230, 0.95);
+  border: 0.12cqw solid rgba(255, 255, 255, 0.8);
+  opacity: 0;
+  animation: gota-cae 0.7s ease-in var(--retraso, 0s) 2 both;
+}
+
+@keyframes gota-cae {
+  0%   { opacity: 0; transform: translateY(0); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(var(--caida, 8cqw)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regadera-cursor.regando, .regadera-cursor.inclinada { transition: none; animation: none; }
+}
+
+/* Sin barra de desplazamiento visible en los datos del carnet */
+.ficha-texto { scrollbar-width: none; }
+.ficha-texto::-webkit-scrollbar { display: none; }
+
+/* Sin filtro verde sobre la maceta cuando pide agua o al pasar el cursor (queda solo el contorno punteado) */
+.zona-maceta:not(:disabled):hover,
+.zona-maceta.sobre,
+.zona-maceta.objetivo {
+  background: transparent;
+}
+.zona-maceta.objetivo { animation: none; }
+.zona-maceta.sobre { box-shadow: none; }
+
+
+/* ============ AJUSTES v8: macetas como objetos + recuadro de objetivo más chico ============ */
+/* La imagen de la maceta (maceta-vacia.png) mide y se ubica igual que las plantas, para que no "salte" al plantar */
+.maceta-sprite {
+  position: absolute;
+  top: 10.37cqw;
+  width: 18.41cqw;
+  padding: 0;
+  border: 0;
+  background: none;
+  pointer-events: none;      /* tiradas, no estorban a la esponja */
+  transform-origin: 51% 72.5%;
+  filter: drop-shadow(0 0 0.3cqw rgba(60, 40, 25, 0.55)) drop-shadow(0 0.5cqw 0.7cqw rgba(60, 40, 25, 0.25));
+}
+.maceta-sprite img { display: block; width: 100%; height: auto; pointer-events: none; }
+#maceta-sprite-izq { left: 7.44cqw;  --cx: 4.1cqw;  --cy: 0.2cqw; --rot: 100deg; }
+#maceta-sprite     { left: 76.9cqw;  --cx: -5.85cqw; --cy: 4.7cqw; --rot: -100deg; }
+
+/* Tirada en el suelo (misma imagen, girada) */
+.maceta-sprite.caida {
+  transform: translate(var(--cx), var(--cy)) rotate(var(--rot)) scale(0.9);
+  filter: brightness(0.88) saturate(0.9) drop-shadow(0 0 0.3cqw rgba(60, 40, 25, 0.6)) drop-shadow(0 0.4cqw 0.6cqw rgba(60, 40, 25, 0.3));
+}
+.maceta-sprite.activa { pointer-events: auto; cursor: pointer; animation: maceta-llama 1.6s ease-in-out infinite; }
+.maceta-sprite.activa:hover { filter: brightness(1.05) drop-shadow(0 0 0.7cqw var(--jasmine)) drop-shadow(0 0 0.7cqw var(--jasmine)); }
+.maceta-sprite:focus-visible { outline: 0.35cqw solid var(--jasmine); outline-offset: 0.3cqw; }
+
+@keyframes maceta-llama {
+  0%, 100% { transform: translate(var(--cx), var(--cy)) rotate(var(--rot)) scale(0.9); }
+  50%      { transform: translate(var(--cx), var(--cy)) rotate(calc(var(--rot) + 5deg)) scale(0.9); }
+}
+
+/* Se endereza con un saltito */
+.maceta-sprite.levantando { animation: maceta-levanta 0.95s cubic-bezier(0.3, 0.7, 0.4, 1) forwards; }
+@keyframes maceta-levanta {
+  0%   { transform: translate(var(--cx), var(--cy)) rotate(var(--rot)) scale(0.9); }
+  40%  { transform: translate(calc(var(--cx) * 0.4), -4cqw) rotate(calc(var(--rot) * 0.35)) scale(1); }
+  70%  { transform: translate(0, 0) rotate(calc(var(--rot) * -0.06)) scale(1); }
+  85%  { transform: translate(0, -0.7cqw) rotate(1.5deg) scale(1); }
+  100% { transform: translate(0, 0) rotate(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .maceta-sprite.activa { animation: none; }
+}
+
+/* Objetivo: más pequeño y discreto */
+.mision {
+  top: 0.9cqw;
+  gap: 0.6cqw;
+  max-width: 40cqw;
+  padding: 0.35cqw 1.1cqw 0.35cqw 0.45cqw;
+  font-size: clamp(10px, 1.15cqw, 17px);
+  border-width: 0.2cqw;
+  border-radius: 1.6cqw;
+}
+.mision-etiqueta { font-size: 0.7em; padding: 0.2em 0.7em; }
+
+/* El resalte del tutorial sobre una maceta girada: brillo en vez de caja cuadrada */
+.maceta-sprite.resaltado {
+  box-shadow: none;
+  animation: maceta-brillo 1.4s ease-in-out infinite;
+}
+@keyframes maceta-brillo {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0.4cqw var(--jasmine)) drop-shadow(0 0 0.4cqw var(--jasmine)); }
+  50%      { filter: brightness(1.1) drop-shadow(0 0 1cqw var(--jasmine)) drop-shadow(0 0 1cqw var(--jasmine)); }
+}
+
+/* Las macetas viven dentro del fondo: se desenfocan junto con él cuando habla el pololo */
+
+/* ============ AJUSTES v9: sombras de las macetas, objetivo como icono, una sola X ============ */
+.maceta-sombra {
+  position: absolute;
+  top: 29.2cqw;
+  width: 12.8cqw;
+  height: 2.8cqw;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(60, 40, 25, 0.5) 0%, rgba(60, 40, 25, 0.28) 45%, rgba(60, 40, 25, 0) 72%);
+  pointer-events: none;
+  transition: transform 0.6s ease-out;
+}
+#sombra-izq { left: 10.68cqw; --sx: 3.9cqw; --sy: 0.5cqw; }
+#sombra-der { left: 80.14cqw; --sx: -6.2cqw; --sy: 4.2cqw; }
+.maceta-sombra.caida { transform: translate(var(--sx), var(--sy)) scale(0.95, 1.1); }
+
+
+/* Mientras el carnet está abierto, solo se ve su X (la del diario vuelve al cerrarlo) */
+.enciclo-cerrar.oculto { display: none; }
+
+/* Objetivo / misión: icono arriba a la izquierda, se despliega al hacer clic */
+.mision {
+  top: 78px;
+  left: 1.3cqw;
+  transform: none;
+  max-width: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6cqw;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: clamp(11px, 1.2cqw, 18px);
+  z-index: 12;
+}
+.mision-icono {
+  position: relative;
+  flex: none;
+  width: clamp(34px, 3.4cqw, 54px);
+  height: clamp(34px, 3.4cqw, 54px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: clamp(18px, 2cqw, 32px);
+  line-height: 1;
+  color: var(--parchment);
+  background: var(--olive-leaf);
+  border: 0.25cqw solid var(--coffee-bean);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0.4cqw 1cqw rgba(45, 49, 46, 0.25);
+  transition: background-color 0.3s, transform 0.15s;
+}
+.mision-icono:hover { transform: scale(1.07); }
+.mision-icono:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 3px; }
+.mision-punto {
+  position: absolute;
+  top: -0.2cqw;
+  right: -0.2cqw;
+  width: 1cqw;
+  height: 1cqw;
+  min-width: 9px;
+  min-height: 9px;
+  background: var(--jasmine);
+  border: 0.18cqw solid var(--coffee-bean);
+  border-radius: 50%;
+}
+.mision-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.6cqw;
+  max-width: 36cqw;
+  margin-top: 0.3cqw;
+  padding: 0.4cqw 1.2cqw 0.4cqw 0.5cqw;
+  background: rgba(247, 245, 240, 0.95);
+  border: 0.2cqw solid var(--coffee-bean);
+  border-radius: 1.6cqw;
+  box-shadow: 0 0.4cqw 1cqw rgba(45, 49, 46, 0.2);
+  animation: mision-despliega 0.25s ease-out;
+}
+.mision-panel[hidden] { display: none; }
+@keyframes mision-despliega {
+  from { opacity: 0; transform: translateX(-1cqw); }
+  to   { opacity: 1; transform: none; }
+}
+/* La Misión (da BP) se distingue con el icono jasmine y el "!" */
+.mision.nueva { animation: none; }
+.mision.nueva .mision-icono { animation: icono-aviso 0.7s ease-out; }
+@keyframes icono-aviso {
+  0%   { transform: scale(0.6); }
+  50%  { transform: scale(1.2) rotate(-8deg); }
+  100% { transform: scale(1); }
+}
+.mision.cumplida .mision-icono { background: var(--jasmine); color: var(--olive-leaf); }
+.mision.cumplida .mision-panel { background: var(--jasmine); border-color: var(--olive-leaf); }
+@media (prefers-reduced-motion: reduce) {
+  .mision.nueva .mision-icono, .mision-panel { animation: none; }
+}
+
+
+/* ============ AJUSTES v10: macetas apoyadas en el piso, sin movimiento, icono más cerca de la esquina ============ */
+/* La maceta es cónica: para que su costado quede plano contra el piso se gira 80° y no 100° */
+#maceta-sprite-izq { --cx: 4.05cqw;  --cy: -1.12cqw; --rot: 80deg; }
+#maceta-sprite     { --cx: -5.81cqw; --cy: 4.21cqw;  --rot: -80deg; }
+/* La sombra queda justo bajo el costado apoyado */
+#sombra-izq { --sx: 3.85cqw;  --sy: -1.65cqw; }
+#sombra-der { --sx: -6.1cqw;  --sy: 3.73cqw; }
+.maceta-sombra.caida { transform: translate(var(--sx), var(--sy)) scale(0.8, 0.86); }
+/* Sin vaivén cuando están caídas */
+.maceta-sprite.activa { animation: none; }
+.mision { top: 74px; left: 0.8cqw; }
+
+/* La tienda queda por encima del objetivo */
+.tienda { z-index: 14; }
+
+
+/* ============ AJUSTES v11: caja de la maceta vacía ============ */
+/* Con la maceta vacía, la caja (y el borde amarillo del tutorial) rodea solo la maceta.
+   Cuando ya hay una planta, vuelve a usarse la caja alta de arriba (--golpe-...). */
+:root {
+  --vacia-ancho: 12.6cqw;
+  --vacia-alto: 11.4cqw;
+  --vacia-arriba: 19.8cqw;
+  --vacia-izq-derecha: 79.9cqw;
+  --vacia-izq-izquierda: 10.5cqw;
+}
+#zona-maceta.vacia, #zona-maceta-izq.vacia {
+  top: var(--vacia-arriba);
+  width: var(--vacia-ancho);
+  height: var(--vacia-alto);
+  border-radius: 2cqw;
+}
+#zona-maceta.vacia { left: var(--vacia-izq-derecha); }
+#zona-maceta-izq.vacia { left: var(--vacia-izq-izquierda); }
+
+
+/* ============ ABEJORRO COLORADO ============ */
+.abejorro-vuelo { width: 9.5cqw; }
+.abejorro-vuelo.clicable { pointer-events: auto; }
+.abejorro-boton {
+  display: block;
+  width: 100%;
+  padding: 1cqw;
+  margin: -1cqw;
+  box-sizing: content-box;
+  background: none;
+  border: 0;
+  cursor: default;
+  pointer-events: none;
+}
+.abejorro-vuelo.clicable .abejorro-boton { cursor: pointer; pointer-events: auto; }
+.abejorro-vuelo.clicable .abejorro-boton:hover img { filter: drop-shadow(0 0 0.7cqw var(--jasmine)) drop-shadow(0 0 0.7cqw var(--jasmine)); }
+.abejorro-boton:focus-visible { outline: 4px solid var(--jasmine); border-radius: 2cqw; }
+.abejorro-boton .vuelo-voltea img { display: block; width: 100%; height: auto; }
+
+/* Abejorro de frente (en el globo de diálogo y en el carnet) */
+.capas-abejorro {
+  --origen-ala-izq: 38% 40%;
+  --origen-ala-der: 62% 40%;
+}
+.guia.es-abejorro .guia-flota { height: 46%; right: 5cqw; }
+.ficha-dibujo .guia-capas.capas-abejorro {
+  height: auto;
+  width: 100%;
+  aspect-ratio: 689 / 438;
+  margin: auto;
+}
+.ficha-dibujo .guia-flota:has(.capas-abejorro) { display: flex; align-items: center; }
+.ficha-dibujo .capas-abejorro .pololo-cuerpo { width: 100%; height: 100%; object-fit: fill; }
+
+/* Pololo pequeño del fondo: se esconde mientras habla el pololo grande */
+.pololo-vuelo.oculto-guia { opacity: 0 !important; }
+.campo-regiones .campo-valor { font-size: 0.95em; line-height: 1.2; }
+/* Más compacto para que quepa la fila de regiones sin cortar la tabla */
+.ficha-texto { gap: 0.55cqw; }
+.sexo-tabla th, .sexo-tabla td { padding: 0.2cqw 0.8cqw; }
+.ficha-texto .campo-nombre .campo-valor { line-height: 1.05; }
+.sexo-tabla { font-size: max(11px, 1.4cqw); }
+
+/* ============ AJUSTES v12: parada de frente de los voladores ============ */
+.abejorro-vuelo.sin-fade { transition: none; }
+.vuelo-voltea { transition: transform 0.35s, opacity 0.35s; }
+.vuelo-frente {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8.5cqw;
+  aspect-ratio: 1394 / 980;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+.abejorro-vuelo .vuelo-frente { width: 11cqw; aspect-ratio: 689 / 438; }
+.vuelo-frente .guia-capas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vuelo-frente .guia-capas:not(.capas-abejorro) { --origen-ala-izq: 34% 62%; --origen-ala-der: 66% 62%; }
+.vuelo-frente .pololo-cuerpo { width: 100%; height: 100%; object-fit: fill; }
+.pololo-vuelo.de-frente .vuelo-frente { opacity: 1; }
+.pololo-vuelo.de-frente .vuelo-voltea { opacity: 0; }
+
+/* ============ Clic sobre el pololo volando ============ */
+#pololo-vuelo.visible .vuelo-voltea,
+#pololo-vuelo.visible .vuelo-frente { pointer-events: auto; cursor: pointer; }
+#pololo-vuelo.oculto-guia .vuelo-voltea,
+#pololo-vuelo.oculto-guia .vuelo-frente { pointer-events: none; }
+#pololo-vuelo.apretado .vuelo-voltea { animation: apretar 0.4s ease-out; }
+#pololo-vuelo.apretado .vuelo-frente { animation: apretar-frente 0.4s ease-out; }
+@keyframes apretar {
+  0%   { scale: 1 1; }
+  25%  { scale: 1.25 0.68; }
+  55%  { scale: 0.88 1.15; }
+  80%  { scale: 1.05 0.96; }
+  100% { scale: 1 1; }
+}
+@keyframes apretar-frente {
+  0%   { transform: translate(-50%, -50%) scale(1, 1); }
+  25%  { transform: translate(-50%, -50%) scale(1.25, 0.68); }
+  55%  { transform: translate(-50%, -50%) scale(0.88, 1.15); }
+  80%  { transform: translate(-50%, -50%) scale(1.05, 0.96); }
+  100% { transform: translate(-50%, -50%) scale(1, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #pololo-vuelo.apretado .vuelo-voltea, #pololo-vuelo.apretado .vuelo-frente { animation: none; }
+}
+
+/* ============ AJUSTES v13 ============ */
+/* Abejorro hablando: un poco más arriba */
+.guia.es-abejorro .guia-flota { bottom: 6cqw; }
+
+/* Abejorro libre: se le puede hacer clic para apretarlo */
+#abejorro-vuelo.apretable .abejorro-boton { pointer-events: auto; cursor: pointer; }
+#abejorro-vuelo.apretable .abejorro-boton:hover img { filter: none; }
+#abejorro-vuelo.apretado .vuelo-voltea { animation: apretar 0.4s ease-out; }
+#abejorro-vuelo.apretado .vuelo-frente { animation: apretar-frente 0.4s ease-out; }
+#abejorro-vuelo.apretable .vuelo-frente { pointer-events: auto; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) {
+  #abejorro-vuelo.apretado .vuelo-voltea, #abejorro-vuelo.apretado .vuelo-frente { animation: none; }
+}
+
+/* ============ AJUSTES v14 ============ */
+
+/* ---- Barra de limpieza ---- */
+.barra-limpieza {
+  position: absolute;
+  top: 2.4cqw;
+  left: 50%;
+  width: 28cqw;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+.barra-limpieza.completa { opacity: 0; }
+.limpieza-pista {
+  height: 1.7cqw;
+  background: rgba(247, 245, 240, 0.85);
+  border: 0.3cqw solid var(--coffee-bean);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 0.2cqw 0.8cqw rgba(45, 49, 46, 0.25);
+}
+.limpieza-relleno {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(180deg, #D6F0FB 0%, #A9DDF2 100%);
+  border-radius: 999px;
+  transition: width 0.25s ease-out;
+}
+.limpieza-burbujas {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 4.4cqw;
+  height: auto;
+  transform: translate(-50%, -52%);
+  transition: left 0.25s ease-out;
+  animation: burbujear 1.6s ease-in-out infinite alternate;
+}
+@keyframes burbujear {
+  from { translate: 0 0.25cqw; rotate: -4deg; }
+  to   { translate: 0 -0.35cqw; rotate: 4deg; }
+}
+
+/* ---- Saldo: salta cuando suma ---- */
+.saldo { overflow: visible; }
+.saldo.saldo-suma { animation: saldo-salto 0.7s ease-out; }
+@keyframes saldo-salto {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.18); }
+  60% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.saldo-aviso {
+  position: absolute;
+  right: 1.2cqw;
+  top: 100%;
+  font-family: var(--font-heading);
+  font-size: clamp(1.1rem, 2cqw, 2rem);
+  color: var(--olive-leaf);
+  text-shadow: 0 0 6px var(--parchment), 0 0 6px var(--parchment);
+  animation: saldo-sube 1.5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes saldo-sube {
+  0% { opacity: 0; transform: translateY(0); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(2.2cqw); }
+}
+
+/* ---- Carnet: voltear la foto ---- */
+.ficha-foto { position: relative; perspective: 120cqw; }
+.ficha-giro {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1394 / 980;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+.ficha-giro.volteada { transform: rotateY(180deg); }
+.ficha-giro .ficha-dibujo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.ficha-real {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  border-radius: 1cqw;
+  overflow: hidden;
+  background: #DDE8C2;
+}
+.ficha-real img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ficha-credito {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 0.2cqw 0.9cqw;
+  font-size: clamp(0.55rem, 0.95cqw, 0.9rem);
+  color: var(--parchment);
+  background: rgba(45, 49, 46, 0.65);
+  border-top-right-radius: 0.8cqw;
+}
+.ficha-voltear {
+  position: absolute;
+  right: 0.8cqw;
+  bottom: 0.8cqw;
+  width: clamp(34px, 3.6cqw, 56px);
+  aspect-ratio: 1;
+  padding: 0.55cqw;
+  display: grid;
+  place-items: center;
+  color: var(--parchment);
+  background: var(--olive-leaf);
+  border: 0.25cqw solid var(--parchment);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 0.3cqw 0.8cqw rgba(45, 49, 46, 0.4);
+  animation: voltear-llamar 2.4s ease-in-out infinite;
+}
+.ficha-voltear svg { width: 100%; height: 100%; }
+.ficha-voltear:hover { background: var(--muted-olive); }
+.ficha-voltear:focus-visible { outline: 4px solid var(--jasmine); outline-offset: 2px; }
+.ficha-voltear.ya-usado { animation: none; }
+@keyframes voltear-llamar {
+  0%, 55%, 100% { transform: scale(1) rotate(0); box-shadow: 0 0 0 0 rgba(244, 208, 111, 0.9), 0 0.3cqw 0.8cqw rgba(45, 49, 46, 0.4); }
+  62% { transform: scale(1.15) rotate(-14deg); }
+  70% { transform: scale(1.15) rotate(14deg); }
+  78% { transform: scale(1.1) rotate(0); box-shadow: 0 0 0 1cqw rgba(244, 208, 111, 0), 0 0.3cqw 0.8cqw rgba(45, 49, 46, 0.4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ficha-voltear, .limpieza-burbujas, .saldo.saldo-suma { animation: none; }
+  .ficha-giro { transition: none; }
+}
+
+/* ============ AJUSTES v15: macetas nuevas ============ */
+/* Todo se ubica con --mx y --my: el punto de la base de la maceta, en cqw */
+.maceta-nueva {
+  left: calc(var(--mx) * 1cqw - 9.64cqw);
+  top: calc(var(--my) * 1cqw - 20.13cqw);
+}
+.maceta-nueva-sombra {
+  left: calc(var(--mx) * 1cqw - 6.4cqw);
+  top: calc(var(--my) * 1cqw - 1.3cqw);
+}
+.zona-maceta.zona-nueva {
+  left: calc(var(--mx) * 1cqw - 8.04cqw);
+  top: calc(var(--my) * 1cqw - 19.5cqw);
+  width: 13.4cqw;
+  height: 20.5cqw;
+  border-radius: 3cqw;
+}
+.zona-maceta.zona-nueva.vacia {
+  left: calc(var(--mx) * 1cqw - 6.6cqw);
+  top: calc(var(--my) * 1cqw - 10.7cqw);
+  width: 12.6cqw;
+  height: 11.4cqw;
+  border-radius: 2cqw;
+}
+.barra-crecimiento.barra-nueva {
+  left: calc(var(--mx) * 1cqw - 5.04cqw);
+  top: calc(var(--my) * 1cqw + 1.3cqw);
+}
+.icono-gota.gota-nueva {
+  left: calc(var(--mx) * 1cqw - 1.74cqw);
+  top: calc(var(--my) * 1cqw - 23.5cqw);
+}
+
+/* Lugares libres del piso: se marcan mientras llevas una maceta en la mano */
+.lugar-maceta {
+  position: absolute;
+  left: calc(var(--mx) * 1cqw - 6.2cqw);
+  top: calc(var(--my) * 1cqw - 2.4cqw);
+  width: 12.4cqw;
+  height: 4.4cqw;
+  padding: 0;
+  z-index: 4;
+  border: 0.35cqw dashed var(--jasmine);
+  border-radius: 50%;
+  background: rgba(244, 208, 111, 0.22);
+  cursor: pointer;
+  animation: lugar-late 1.3s ease-in-out infinite;
+}
+.lugar-maceta[hidden] { display: none; }
+.lugar-maceta:hover, .lugar-maceta:focus-visible {
+  background: rgba(244, 208, 111, 0.5);
+  outline: none;
+}
+@keyframes lugar-late {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+
+/* La maceta cae al piso */
+.maceta-nueva.cayendo { animation: maceta-cae 0.65s cubic-bezier(0.3, 0.7, 0.4, 1); }
+@keyframes maceta-cae {
+  0%   { transform: translateY(-9cqw); opacity: 0; }
+  55%  { transform: translateY(0); opacity: 1; }
+  72%  { transform: translateY(-1.2cqw) scale(0.98, 1.03); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+/* Se llena de tierra */
+.maceta-nueva.rellenando { animation: maceta-rellena 0.55s ease-out; }
+@keyframes maceta-rellena {
+  0%   { transform: scale(1, 1); }
+  35%  { transform: scale(1.06, 0.93); }
+  70%  { transform: scale(0.98, 1.04); }
+  100% { transform: scale(1, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lugar-maceta, .maceta-nueva.cayendo, .maceta-nueva.rellenando { animation: none; }
+}

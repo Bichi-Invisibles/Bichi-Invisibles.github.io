@@ -77,6 +77,9 @@
     </svg>
   </button>
 
+  <!-- Mensaje temporal junto al engranaje -->
+  <p class="aviso-config" id="aviso-config" role="status" hidden>Siéntete libre de configurar los sonidos a tu gusto para cambiar tu experiencia de juego.</p>
+
   <!-- Menú de configuración -->
   <section class="config" id="config" role="dialog" aria-modal="true" aria-labelledby="config-titulo" hidden>
     <div class="config-panel">
@@ -125,7 +128,7 @@
       <img class="libro-fondo" id="libro-fondo" src="assets/enciclopedia/libro-abierto.png" alt="" draggable="false">
       <img class="libro-tapa" id="libro-tapa" src="assets/enciclopedia/libro-cerrado.png" alt="" draggable="false">
 
-      <h2 class="solo-lectores" id="enciclo-titulo-sr">Enciclopedia de insectos</h2>
+      <h2 class="solo-lectores" id="enciclo-titulo-sr">Diario de campo</h2>
       <p class="solo-lectores" id="enciclo-estado" aria-live="polite"></p>
 
       <!-- Dos planas: izquierda y derecha -->
@@ -149,10 +152,30 @@
       <div class="ficha-capa" id="ficha-capa" hidden>
         <article class="ficha" id="ficha" role="dialog" aria-modal="true" aria-labelledby="ficha-titulo">
           <div class="ficha-izq">
-            <div class="ficha-foto"><div class="ficha-dibujo" id="ficha-dibujo"></div></div>
+            <div class="ficha-foto">
+              <div class="ficha-giro" id="ficha-giro">
+                <div class="ficha-dibujo" id="ficha-dibujo"></div>
+                <div class="ficha-real" id="ficha-real" aria-hidden="true">
+                  <img id="ficha-real-img" src="" alt="" draggable="false">
+                  <span class="ficha-credito" id="ficha-credito" hidden></span>
+                </div>
+              </div>
+              <button class="ficha-voltear" id="ficha-voltear" type="button" aria-label="Ver foto real del insecto" title="Voltear">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.3-5.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M19.8 3.8v4.6h-4.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
             <div class="ficha-tiempos" id="ficha-tiempos"></div>
           </div>
           <div class="ficha-texto" id="ficha-texto" tabindex="0"></div>
+          <div class="ficha-mapa-caja" hidden>
+            <div class="mapa-info">
+              <span class="campo-etiqueta">¿Dónde vive?</span>
+              <span class="ficha-mapa-texto" id="ficha-mapa-texto"></span>
+            </div>
+            <span class="mapa-punto">Norte</span>
+            <div class="ficha-mapa" id="ficha-mapa"></div>
+            <span class="mapa-punto">Sur</span>
+          </div>
           <button class="ficha-cerrar" id="ficha-cerrar" aria-label="Cerrar información">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#6F513A" stroke-width="3" stroke-linecap="round"/>
@@ -251,19 +274,31 @@
       <div class="escena-fondo" id="escena-fondo">
         <img class="fondo-limpio" src="assets/escenarios/balcon-limpio.png" alt="">
         <canvas class="fondo-sucio" id="fondo-sucio" role="img" aria-label="Balcón en mal estado, con telarañas y macetas rotas"></canvas>
+
+        <!-- Macetas como objetos aparte (van dentro del fondo para desenfocarse junto con él): tiradas al empezar; al limpiar se les hace clic y se enderezan -->
+      <span class="maceta-sombra caida" id="sombra-izq" aria-hidden="true"></span>
+      <span class="maceta-sombra caida" id="sombra-der" aria-hidden="true"></span>
+      <button class="maceta-sprite caida" id="maceta-sprite-izq" disabled aria-label="Levantar la maceta de la izquierda">
+        <img src="assets/plantas/maceta-vacia.png" alt="" draggable="false">
+      </button>
+      <button class="maceta-sprite caida" id="maceta-sprite" disabled aria-label="Levantar la maceta de la derecha">
+        <img src="assets/plantas/maceta-vacia.png" alt="" draggable="false">
+      </button>
+
+        <!-- Las plantas también van dentro del fondo, para desenfocarse con él -->
+        <img class="planta" id="planta" src="assets/plantas/manzanilla-pequena.png" alt="" hidden>
+        <img class="planta" id="planta-izq" src="assets/plantas/rosa-mediana.png" alt="" hidden>
       </div>
 
       <!-- Maceta de la derecha: aquí se planta y crece la manzanilla -->
-      <img class="planta" id="planta" src="assets/plantas/manzanilla-pequena.png" alt="" hidden>
-      <button class="zona-maceta" id="zona-maceta" disabled aria-label="Maceta de la derecha"></button>
+      <button class="zona-maceta vacia" id="zona-maceta" disabled aria-label="Maceta de la derecha"></button>
       <div class="barra-crecimiento" id="barra-crecimiento" role="progressbar" aria-label="Crecimiento de la manzanilla" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
         <div class="barra-relleno" id="barra-relleno"></div>
       </div>
       <img class="icono-gota" id="icono-gota" src="assets/plantas/icono-gota.png" alt="La planta tiene sed" hidden>
 
       <!-- Maceta de la izquierda: aquí se planta la rosa -->
-      <img class="planta" id="planta-izq" src="assets/plantas/rosa-mediana.png" alt="" hidden>
-      <button class="zona-maceta" id="zona-maceta-izq" disabled aria-label="Maceta de la izquierda"></button>
+      <button class="zona-maceta vacia" id="zona-maceta-izq" disabled aria-label="Maceta de la izquierda"></button>
       <div class="barra-crecimiento" id="barra-crecimiento-izq" role="progressbar" aria-label="Crecimiento de la rosa" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
         <div class="barra-relleno" id="barra-relleno-izq"></div>
       </div>
@@ -279,18 +314,46 @@
         </div>
       </div>
 
+      <!-- Abejorro colorado volando: aparece cuando se planta la rosa y se le puede hacer clic -->
+      <div class="pololo-vuelo abejorro-vuelo" id="abejorro-vuelo" hidden>
+        <button class="abejorro-boton" id="abejorro-boton" type="button" data-sin-clic aria-label="Abejorro colorado: haz clic para saludarlo">
+          <div class="vuelo-voltea" id="abejorro-voltea">
+            <img src="assets/abejorro/abejorro-vuelo.png" alt="" draggable="false">
+          </div>
+        </button>
+      </div>
+
       <!-- Menú izquierdo (todavía sin funciones: botones apagados) -->
                  <nav class="menu-izq" id="menu-izq" aria-label="Menú del juego">
-        <button class="menu-boton" id="menu-tienda" disabled aria-label="Tienda (próximamente)">
+        <button class="menu-boton" id="menu-tienda" disabled aria-label="Tienda" data-nombre="Tienda">
           <img src="assets/iconos/icono-tienda.png" alt="">
         </button>
-        <button class="menu-boton" id="menu-enciclopedia" disabled aria-label="Enciclopedia (se activa al terminar el tutorial)">
+        <button class="menu-boton" id="menu-enciclopedia" disabled aria-label="Diario de campo" data-nombre="Diario de campo">
           <img src="assets/iconos/icono-enciclopedia.png" alt="">
         </button>
-        <button class="menu-boton" id="menu-hotel" disabled aria-label="Hotel de insectos (próximamente)">
+        <button class="menu-boton" id="menu-hotel" disabled aria-label="Hotel de insectos" data-nombre="Hotel de insectos">
           <img src="assets/iconos/icono-hotel.png" alt="">
         </button>
       </nav>
+
+      <!-- Objetivo / misión actual: un icono arriba a la izquierda; al hacerle clic se despliega -->
+      <div class="mision" id="mision" role="status" aria-live="polite" hidden>
+        <button class="mision-icono" id="mision-icono" type="button" aria-expanded="false" aria-controls="mision-panel" aria-label="Ver objetivo actual">
+          <span id="mision-simbolo">?</span>
+          <i class="mision-punto" id="mision-punto" hidden></i>
+        </button>
+        <div class="mision-panel" id="mision-panel" hidden>
+          <span class="mision-etiqueta" id="mision-etiqueta">Objetivo</span>
+          <span class="mision-texto" id="mision-texto"></span>
+          <span class="mision-progreso" id="mision-progreso"></span>
+        </div>
+      </div>
+
+      <!-- Barra de limpieza: se ve mientras se limpia con la esponja -->
+      <div class="barra-limpieza" id="barra-limpieza" role="progressbar" aria-label="Nivel de limpieza" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+        <div class="limpieza-pista"><div class="limpieza-relleno" id="limpieza-relleno"></div></div>
+        <img class="limpieza-burbujas" id="limpieza-burbujas" src="assets/iconos/burbujas.png" alt="" draggable="false">
+      </div>
 
       <!-- Saldo de BichiPesos -->
       <div class="saldo" id="saldo">
