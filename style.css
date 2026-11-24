@@ -932,19 +932,20 @@ button.nivel:focus-visible:not(:disabled) {
 }
 
 .producto-foto {
+  position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  display: grid;
-  place-items: center;
   overflow: hidden;
   background: rgba(141, 173, 78, 0.3);
   border-radius: 0.8cqw;
 }
 
 .producto-foto img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  position: absolute;
+  inset: 3%;
+  width: 94%;
+  height: 94%;
+  object-fit: contain;   /* la imagen se ve completa, sin recortes */
 }
 
 .producto-nombre {
@@ -3232,3 +3233,206 @@ button.nivel:focus-visible:not(:disabled) {
 @media (prefers-reduced-motion: reduce) {
   .lugar-maceta, .maceta-nueva.cayendo, .maceta-nueva.rellenando { animation: none; }
 }
+
+/* ============ MINI JUEGO: círculos de luz ============ */
+.ritmo-punto {
+  position: absolute;
+  z-index: 8;
+  width: 6.5cqw;
+  height: 6.5cqw;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 0.4cqw solid var(--jasmine);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(248, 242, 234, 0.95) 0%, rgba(244, 208, 111, 0.75) 65%, rgba(244, 208, 111, 0.35) 100%);
+  box-shadow: 0 0 1.6cqw rgba(244, 208, 111, 0.9);
+  cursor: pointer;
+  animation: ritmo-aparece 0.25s ease-out;
+}
+.ritmo-aro {
+  position: absolute;
+  inset: 0;
+  border: 0.45cqw solid var(--parchment);
+  border-radius: 50%;
+  box-shadow: 0 0 1cqw rgba(244, 208, 111, 0.95);
+  pointer-events: none;
+  animation-name: ritmo-aro;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes ritmo-aro {
+  from { transform: scale(2.8); opacity: 0.2; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+@keyframes ritmo-aparece {
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+.ritmo-punto.acierto, .ritmo-hoja.acierto {
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+  transform: translate(-50%, -50%) scale(1.6);
+  opacity: 0;
+  pointer-events: none;
+}
+.ritmo-punto.fallo, .ritmo-hoja.fallo {
+  transition: opacity 0.4s ease-out;
+  opacity: 0;
+  pointer-events: none;
+}
+.ritmo-pista {
+  position: absolute;
+  top: 118%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 0.3cqw 1cqw;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.5cqw;
+  color: var(--gunmetal);
+  background: var(--parchment);
+  border-radius: 1.5cqw;
+  pointer-events: none;
+}
+.ritmo-aviso {
+  position: absolute;
+  z-index: 30;
+  padding: 0.3cqw 1cqw;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 2cqw;
+  color: var(--olive-leaf);
+  background: var(--parchment);
+  border-radius: 2cqw;
+  pointer-events: none;
+  animation: bp-sube 1.2s ease-out forwards;
+}
+
+/* Hojita de BP */
+.ritmo-hoja {
+  position: absolute;
+  z-index: 8;
+  width: 5.5cqw;
+  height: 5.5cqw;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  background: none;
+  cursor: pointer;
+  filter: drop-shadow(0 0.3cqw 0.4cqw rgba(45, 49, 46, 0.35));
+  animation: ritmo-aparece 0.3s ease-out, ritmo-flota 1.6s ease-in-out 0.3s infinite;
+}
+.ritmo-hoja svg { width: 100%; height: 100%; }
+.ritmo-hoja span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.7cqw;
+  color: var(--parchment);
+  text-shadow: 0 0 0.3cqw var(--olive-leaf);
+}
+@keyframes ritmo-flota {
+  0%, 100% { margin-top: 0; }
+  50%      { margin-top: -0.8cqw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ritmo-hoja { animation: none; }
+}
+
+
+/* ============ AJUSTES v16: macetas por levantar con borde amarillo, moneda que cae de los insectos ============ */
+/* Cuando se puede hacer clic en una maceta tirada, se marca con un contorno amarillo */
+.maceta-sprite.caida.activa {
+  filter:
+    drop-shadow(0.22cqw 0 0 var(--jasmine)) drop-shadow(-0.22cqw 0 0 var(--jasmine))
+    drop-shadow(0 0.22cqw 0 var(--jasmine)) drop-shadow(0 -0.22cqw 0 var(--jasmine))
+    drop-shadow(0 0 0.8cqw rgba(244, 208, 111, 0.9));
+}
+.maceta-sprite.caida.activa:hover {
+  filter:
+    brightness(1.08)
+    drop-shadow(0.28cqw 0 0 var(--jasmine)) drop-shadow(-0.28cqw 0 0 var(--jasmine))
+    drop-shadow(0 0.28cqw 0 var(--jasmine)) drop-shadow(0 -0.28cqw 0 var(--jasmine))
+    drop-shadow(0 0 1.2cqw var(--jasmine));
+}
+
+.bp-cae {
+  position: absolute;
+  z-index: 30;
+  width: 3cqw;
+  height: auto;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: bp-cae 1.1s cubic-bezier(0.4, 0, 0.8, 0.6) forwards;
+}
+@keyframes bp-cae {
+  0%   { transform: translate(-50%, -50%); opacity: 1; }
+  70%  { transform: translate(-50%, 4cqw); opacity: 1; }
+  100% { transform: translate(-50%, 4cqw); opacity: 0; }
+}
+
+
+/* ============ AJUSTES v17: chinita chilena ============ */
+/* Vuela como el abejorro, pero es más pequeña */
+.chinita-vuelo { width: 12cqw; }
+.chinita-vuelo .vuelo-frente { width: 11cqw; aspect-ratio: 760 / 420; }
+.chinita-vuelo.clicable { pointer-events: auto; }
+.chinita-vuelo.clicable .abejorro-boton { cursor: pointer; pointer-events: auto; }
+.chinita-vuelo.clicable .abejorro-boton:hover img { filter: drop-shadow(0 0 0.7cqw var(--jasmine)) drop-shadow(0 0 0.7cqw var(--jasmine)); }
+.chinita-vuelo.sin-fade { transition: none; }
+
+/* Chinita de frente (globo de diálogo, parada en vuelo y carnet): élitros atrás, alas aleteando, cuerpo y párpados */
+.capas-chinita {
+  --origen-ala-izq: 36% 40%;
+  --origen-ala-der: 64% 40%;
+}
+.guia-capas:not(.capas-abejorro):not(.capas-chinita) .ala { z-index: 3; }
+.capas-chinita .elitro { z-index: 0; }
+.capas-chinita .ala { z-index: 1; }
+.capas-chinita .pololo-cuerpo { z-index: 3; }
+.capas-chinita .parpados { z-index: 4; }
+.capas-chinita .ala-izq { animation-name: aletear-izq-chinita; }
+.capas-chinita .ala-der { animation-name: aletear-der-chinita; }
+@keyframes aletear-izq-chinita { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
+@keyframes aletear-der-chinita { from { transform: rotate(9deg); } to { transform: rotate(-9deg); } }
+.guia.es-chinita .guia-flota { height: 40%; right: 5cqw; bottom: 6cqw; }
+.ficha-dibujo .guia-capas.capas-chinita {
+  height: auto;
+  width: 100%;
+  aspect-ratio: 760 / 420;
+  margin: auto;
+}
+.ficha-dibujo .guia-flota:has(.capas-chinita) { display: flex; align-items: center; }
+.ficha-dibujo .capas-chinita .pololo-cuerpo { width: 100%; height: 100%; object-fit: fill; }
+.vuelo-frente .guia-capas.capas-chinita { --origen-ala-izq: 36% 40%; --origen-ala-der: 64% 40%; }
+
+/* Chinita libre: se le puede hacer clic para apretarla */
+#chinita-vuelo.apretable .abejorro-boton { pointer-events: auto; cursor: pointer; }
+#chinita-vuelo.apretable .abejorro-boton:hover img { filter: none; }
+#chinita-vuelo.apretado .vuelo-voltea { animation: apretar 0.4s ease-out; }
+#chinita-vuelo.apretado .vuelo-frente { animation: apretar-frente 0.4s ease-out; }
+#chinita-vuelo.apretable .vuelo-frente { pointer-events: auto; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) {
+  #chinita-vuelo.apretado .vuelo-voltea, #chinita-vuelo.apretado .vuelo-frente { animation: none; }
+}
+
+/* Fuente de los datos del carnet, en letra pequeña abajo */
+.ficha-fuente {
+  position: absolute;
+  left: 3cqw;
+  right: 6cqw;
+  bottom: 0.9cqw;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: max(9px, 1cqw);
+  line-height: 1.2;
+  color: var(--coffee-bean);
+  opacity: 0.85;
+}
+.ficha-fuente[hidden] { display: none; }
+.ficha.con-fuente { padding-bottom: 4cqw; }
+
+.campo-fila-2 { grid-template-columns: 1.6fr 1fr; }

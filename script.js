@@ -18,15 +18,16 @@ const estado = {
   especiesPlantadas: [],          // para las misiones
   misionActual: 0,
   macetasColocadas: 0,            // macetas nuevas ya puestas en el piso
+  plantasPlantadas: 0,            // cuántas plantas se han plantado en total (la 3ª atrae a la chinita)
   tiendaAmpliada: false           // pasa a true cuando se descubre al abejorro en el diario: se desbloquean macetas, tierra y pasiflora
 };
 
 // Lugares del piso donde se pueden poner macetas nuevas (x e y = punto de la base de la maceta, en cqw)
 const LUGARES_MACETAS = [
-  { x: 30,   y: 37.5 },
-  { x: 43.5, y: 37.5 },
-  { x: 57,   y: 37.5 },
-  { x: 70.5, y: 37.5 }
+  { x: 30,   y: 30.5 },
+  { x: 43.5, y: 30.5 },
+  { x: 57,   y: 30.5 },
+  { x: 70.5, y: 30.5 }
 ];
 
 function mostrarMonedas() {
@@ -61,23 +62,33 @@ const PRODUCTOS = [
   { id: "maceta-terracota",    nombre: "Maceta de terracota",  precio: 4,  tipo: "herramienta", imagen: "assets/tienda/maceta-terracota.png",    disponible: false,
     // Solo se pueden comprar tantas como lugares libres hay en el piso (LUGARES_MACETAS)
     disponibleSi: () => estado.tiendaAmpliada && (estado.macetasColocadas + (estado.inventario["maceta-terracota"] || 0)) < LUGARES_MACETAS.length,
-    etiquetaNo: () => (estado.tiendaAmpliada ? "Sin espacio" : "Pronto") },
+    etiquetaNo: () => (estado.tiendaAmpliada ? "Sin espacio" : "Comprar") },
   { id: "maceta-ceramica",     nombre: "Maceta de cerámica",   precio: 6,  tipo: "herramienta", imagen: "assets/tienda/maceta-ceramica.png",     disponible: false },
   { id: "jardinera",           nombre: "Jardinera",            precio: 8,  tipo: "herramienta", imagen: "assets/tienda/jardinera.png",           disponible: false },
   { id: "jardinera-madera",    nombre: "Jardinera de madera",  precio: 10, tipo: "herramienta", imagen: "assets/tienda/jardinera-madera.png",    disponible: false },
   { id: "semillas-manzanilla", nombre: "Manzanilla",           precio: 2,  tipo: "semilla",     imagen: "assets/tienda/semillas-manzanilla.png", disponible: false,
     // Solo se puede comprar cuando el pololo lo indica, y una sola vez
     disponibleSi: () => estado.puedeComprarManzanilla,
-    etiquetaNo: () => (estado.manzanillaComprada ? "Comprada" : "Comprar") },
+    etiquetaNo: () => "Comprar" },
   { id: "semillas-rosa",       nombre: "Rosa",                 precio: 4,  tipo: "semilla",     imagen: "assets/tienda/semillas-rosa.png",       disponible: false,
     // Se desbloquea al terminar el tutorial y se compra una sola vez (hay una sola maceta libre)
     disponibleSi: () => estado.tutorialTerminado && !estado.rosaComprada,
-    etiquetaNo: () => (estado.rosaComprada ? "Ya la tienes" : "Pronto") },
-  { id: "semillas-calle-calle",nombre: "Calle-calle chilena",  precio: 5,  tipo: "semilla",     imagen: "assets/tienda/semillas-calle-calle.png",disponible: false },
-  { id: "semillas-pasiflora",  nombre: "Pasiflora",            precio: 6,  tipo: "semilla",     imagen: "assets/tienda/semillas-pasiflora.png",  disponible: false,
-    // Se desbloquea junto con las macetas y la tierra (al descubrir al abejorro)
+    etiquetaNo: () => "Comprar" },
+  // Desde aquí, todas se desbloquean junto con las macetas y la tierra; ordenadas de la más barata a la más cara
+  { id: "semillas-calle-calle", nombre: "Calle-calle chilena", precio: 5, tipo: "semilla", imagen: "assets/tienda/semillas-calle-calle.png", disponible: false,
     disponibleSi: () => estado.tiendaAmpliada },
-  { id: "semillas-lirio",      nombre: "Lirio chileno",        precio: 8,  tipo: "semilla",     imagen: "assets/tienda/semillas-lirio.png",      disponible: false }
+  { id: "semillas-pasiflora", nombre: "Pasiflora", precio: 6, tipo: "semilla", imagen: "assets/tienda/semillas-pasiflora.png", disponible: false,
+    disponibleSi: () => estado.tiendaAmpliada },
+  { id: "semillas-lirio", nombre: "Lirio chileno", precio: 8, tipo: "semilla", imagen: "assets/tienda/semillas-lirio.png", disponible: false,
+    disponibleSi: () => estado.tiendaAmpliada },
+  { id: "semillas-lavanda", nombre: "Lavanda", precio: 10, tipo: "semilla", imagen: "assets/tienda/semillas-lavanda.png", disponible: false,
+    disponibleSi: () => estado.tiendaAmpliada },
+  { id: "semillas-malamadre", nombre: "Malamadre", precio: 13, tipo: "semilla", imagen: "assets/tienda/semillas-malamadre.png", disponible: false,
+    disponibleSi: () => estado.tiendaAmpliada },
+  { id: "semillas-salvia-chilena", nombre: "Salvia chilena", precio: 15, tipo: "semilla", imagen: "assets/tienda/semillas-salvia-chilena.png", disponible: false,
+    disponibleSi: () => estado.tiendaAmpliada },
+  { id: "semillas-lengua-de-suegra", nombre: "Lengua de suegra", precio: 20, tipo: "semilla", imagen: "assets/tienda/semillas-lengua-de-suegra.png", disponible: false,
+    disponibleSi: () => estado.tiendaAmpliada }
 ];
 
 // Objetos que NO se compran en la tienda pero sí van al inventario
@@ -248,6 +259,7 @@ botonContinuar.addEventListener("click", () => {
 // Ajustes que puedes cambiar
 const GANANCIA_MUSICA = 0.45;   // la música suena a este porcentaje del volumen general (0 a 1)
 const GANANCIA_VUELO = 1;       // lo mismo para el zumbido del pololo
+const GANANCIA_CHINITA = 0.4;   // lo mismo para el zumbido de la chinita (su sonido es más fuerte que los otros; 1 = igual que el pololo)
 const CLAVE_AJUSTES = "bichi-ajustes";
 
 const ajustes = { volumenMusica: 0.6, volumenAleteo: 0.6, volumenBotones: 0.6, musicaActiva: true };
@@ -386,12 +398,18 @@ function actualizarSonidoVuelo(x) {
   }
 }
 
+// Zumbido de la chinita chilena (suena desde que se planta la tercera planta)
+const sonidoChinita = new Audio("assets/sonidos/vuelo-chinita.mp3");
+sonidoChinita.loop = true;
+sonidoChinita.preload = "auto";
+
 // Si se cambia de pestaña, el sonido se pausa
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     musicaFondo.pause();
     sonidoVuelo.pause();
     sonidoAbejorro.pause();
+    sonidoChinita.pause();
   } else if (sonidoPermitido && ajustes.musicaActiva) {
     musicaFondo.play().catch(() => {});
   }
@@ -546,9 +564,31 @@ INSECTOS.abejorro = {
   }
 };
 
+INSECTOS.chinita = {
+  nombre: "Chinita chilena",
+  imagen: "assets/chinita/chinita-registro.png",
+  foto: "assets/fotos/chinita-real.jpg",
+  animado: "chinita",   // en la ficha se muestra con sus alas aleteando
+  // Los datos salen de la ficha de Guardianes de la Fauna (guardiandelafauna.cl), escrita a partir de
+  // Grez, González y Zaviezo (2021), González, Cotoras y Grez (2020) y Eizaguirre (2004).
+  fuente: "Datos: Guardianes de la Fauna (guardiandelafauna.cl), según Grez, González y Zaviezo (2021); González, Cotoras y Grez (2020); Eizaguirre (2004).",
+  ficha: {
+    nombre: "Chinita chilena",
+    nombreCientifico: "Eriopis chilensis",
+    nacionalidad: "Chilena",
+    zona: "De Copiapó a Chiloé",
+    regiones: ["atacama", "coquimbo", "valparaiso", "metropolitana", "ohiggins", "maule", "nuble", "biobio", "araucania", "losrios", "loslagos"],
+    descripcion: "¡Una chinita que vive solo en Chile! Es pequeñita y redondeada, de colores negro y anaranjado. Come pulgones, tanto de adulta como de larva, y así ayuda a cuidar las plantas. Se la ve en jardines, cultivos y bosques. Hoy compite con chinitas que llegaron de otros países.",
+    tiempos: [
+      { etiqueta: "Tamaño", valor: "3,6 a 4,7 mm" },
+      { etiqueta: "Conservación", valor: "Preocupación menor" }
+    ]
+  }
+};
+
 const casillasVacias = () => new Array(CASILLAS_POR_PLANA * 2).fill(null);
 const ENCICLOPEDIA = [
-  { titulo: "Terraza", casillas: ["pololo", "abejorro", ...casillasVacias().slice(2)] },
+  { titulo: "Terraza", casillas: ["pololo", "abejorro", "chinita", ...casillasVacias().slice(3)] },
   { titulo: "Patio",   casillas: casillasVacias() },
   { proximamente: true }
 ];
@@ -738,6 +778,34 @@ function crearAbejorroAnimado() {
   return flota;
 }
 
+// Chinita de frente: los élitros (alas negras) atrás, las alas transparentes aleteando, el cuerpo y los párpados
+function crearChinitaAnimada() {
+  const flota = document.createElement("div");
+  flota.className = "guia-flota";
+  const capas = document.createElement("div");
+  capas.className = "guia-capas capas-chinita";
+  capas.append(...capasChinita());
+  flota.appendChild(capas);
+  return flota;
+}
+
+function capasChinita() {
+  return [
+    ["capa elitro", "assets/chinita/chinita-elitros-izq.png"],
+    ["capa elitro", "assets/chinita/chinita-elitros-der.png"],
+    ["capa ala ala-izq", "assets/chinita/chinita-alas-izq.png"],
+    ["capa ala ala-der", "assets/chinita/chinita-alas-der.png"],
+    ["pololo-cuerpo", "assets/chinita/chinita-cuerpo.png"],
+    ["capa parpados", "assets/chinita/chinita-parpados.png"]
+  ].map(([clase, ruta]) => {
+    const pieza = document.createElement("img");
+    pieza.className = clase;
+    pieza.src = ruta;
+    pieza.alt = "";
+    return pieza;
+  });
+}
+
 function capasAbejorro() {
   return [
     ["capa ala ala-izq", "assets/abejorro/abejorro-alas-izq.png"],
@@ -803,13 +871,19 @@ function abrirFicha(id, botonOrigen) {
   // "Foto de carnet": el insecto (animado si tiene capas)
   fichaDibujo.replaceChildren();
   if (datos.animado) {
-    fichaDibujo.appendChild(datos.animado === "abejorro" ? crearAbejorroAnimado() : crearPololoAnimado());
+    fichaDibujo.appendChild(datos.animado === "abejorro" ? crearAbejorroAnimado() : datos.animado === "chinita" ? crearChinitaAnimada() : crearPololoAnimado());
   } else {
     const dibujo = document.createElement("img");
     dibujo.src = datos.imagen;
     dibujo.alt = datos.nombre;
     fichaDibujo.appendChild(dibujo);
   }
+
+  // Fuente de los datos (letra pequeña, abajo del carnet)
+  const fuente = document.getElementById("ficha-fuente");
+  fuente.hidden = !datos.fuente;
+  fuente.textContent = datos.fuente || "";
+  document.getElementById("ficha").classList.toggle("con-fuente", Boolean(datos.fuente));
 
   // Debajo de la foto: tiempos de cada etapa
   const tiempos = document.getElementById("ficha-tiempos");
@@ -823,8 +897,11 @@ function abrirFicha(id, botonOrigen) {
   const nombre = campoCarnet("Nombre", ficha.nombre, "campo-nombre");
   nombre.querySelector(".campo-valor").id = "ficha-titulo";
   if (ficha.nombreCientifico) nombre.appendChild(elemento("span", "campo-cientifico", ficha.nombreCientifico));
-  const fila1 = elemento("div", "campo-fila campo-fila-3");
-  fila1.append(nombre, campoCarnet("Otro nombre", ficha.otroNombre), campoCarnet("Nacionalidad", ficha.nacionalidad));
+  // Si el insecto no tiene "otro nombre", ese cuadro no se muestra
+  const fila1 = elemento("div", "campo-fila " + (ficha.otroNombre ? "campo-fila-3" : "campo-fila-2"));
+  fila1.append(nombre);
+  if (ficha.otroNombre) fila1.append(campoCarnet("Otro nombre", ficha.otroNombre));
+  fila1.append(campoCarnet("Nacionalidad", ficha.nacionalidad));
   // Nombres de las regiones (para que no haya que saberlas de memoria)
   const filaRegiones = ficha.regiones
     ? campoCarnet("Regiones", listaDeRegiones(ficha.regiones), "campo-regiones")
@@ -1223,7 +1300,7 @@ iconoMision.addEventListener("click", () => abrirMision(panelMision.hidden));
 // Misiones de después del tutorial (se pueden agregar más; van en orden)
 //  - progreso: función que dice cuánto lleva el jugador;  meta: cuánto necesita;  recompensa: BP
 const MISIONES = [
-  { texto: "Planta dos plantas diferentes", meta: 2, recompensa: 3, progreso: () => estado.especiesPlantadas.length }
+  { texto: "Planta dos plantas diferentes", meta: 2, recompensa: 4, progreso: () => estado.especiesPlantadas.length }
 ];
 
 function mostrarMisionLibre() {
@@ -1527,7 +1604,7 @@ function actualizarTienda() {
     boton.disabled = !disponible;
     boton.textContent = disponible
       ? "Comprar"
-      : (producto.etiquetaNo ? producto.etiquetaNo() : "Pronto");
+      : (producto.etiquetaNo ? producto.etiquetaNo() : "Comprar");
     boton.setAttribute(
       "aria-label",
       (disponible ? "Comprar " : "No disponible aún: ") + producto.nombre
@@ -1962,6 +2039,76 @@ const ESPECIES = {
     },
     lienzo: { ancho: 619, anclaX: 313.06, anclaY: 848.36, escala: 0.415 },
     lienzoEtapa: { pequena: { ancho: 1054, anclaX: 552, anclaY: 1153, escala: 0.262 } }
+  },
+  "calle-calle": {
+    etapaInicial: "pequena",
+    imagenes: {
+      pequena: "assets/plantas/calle-calle-pequena.png",
+      mediana: "assets/plantas/calle-calle-mediana.png",
+      sed: "assets/plantas/calle-calle-sed.png",
+      grande: "assets/plantas/calle-calle-flor.png",
+      marchita: "assets/plantas/calle-calle-marchita.png"
+    },
+    lienzo: { ancho: 529, anclaX: 276.0, anclaY: 734.5, escala: 0.584, cimaSed: 135 }
+  },
+  lirio: {
+    etapaInicial: "pequena",
+    imagenes: {
+      pequena: "assets/plantas/lirio-chileno-pequena.png",
+      mediana: "assets/plantas/lirio-chileno-mediana.png",
+      sed: "assets/plantas/lirio-chileno-sed.png",
+      grande: "assets/plantas/lirio-chileno-flor.png",
+      marchita: "assets/plantas/lirio-chileno-marchita.png"
+    },
+    lienzo: { ancho: 529, anclaX: 276.0, anclaY: 734.5, escala: 0.584, cimaSed: 89 }
+  },
+  lavanda: {
+    etapaInicial: "pequena",
+    imagenes: {
+      pequena: "assets/plantas/lavanda-pequena.png",
+      mediana: "assets/plantas/lavanda-mediana.png",
+      crecida: "assets/plantas/lavanda-crecida.png",
+      sed: "assets/plantas/lavanda-sed.png",
+      grande: "assets/plantas/lavanda-flor.png",
+      marchita: "assets/plantas/lavanda-marchita.png"
+    },
+    lienzo: { ancho: 529, anclaX: 276.0, anclaY: 734.5, escala: 0.584, cimaSed: 144 }
+  },
+  malamadre: {
+    etapaInicial: "pequena",
+    imagenes: {
+      pequena: "assets/plantas/malamadre-pequena.png",
+      mediana: "assets/plantas/malamadre-mediana.png",
+      crecida: "assets/plantas/malamadre-crecida.png",
+      sed: "assets/plantas/malamadre-sed.png",
+      grande: "assets/plantas/malamadre-flor.png",
+      marchita: "assets/plantas/malamadre-marchita.png"
+    },
+    lienzo: { ancho: 529, anclaX: 276.0, anclaY: 734.5, escala: 0.584, cimaSed: 287 }
+  },
+  "salvia-chilena": {
+    etapaInicial: "pequena",
+    imagenes: {
+      pequena: "assets/plantas/salvia-chilena-pequena.png",
+      mediana: "assets/plantas/salvia-chilena-mediana.png",
+      crecida: "assets/plantas/salvia-chilena-crecida.png",
+      sed: "assets/plantas/salvia-chilena-sed.png",
+      grande: "assets/plantas/salvia-chilena-flor.png",
+      marchita: "assets/plantas/salvia-chilena-marchita.png"
+    },
+    lienzo: { ancho: 529, anclaX: 276.0, anclaY: 734.5, escala: 0.584, cimaSed: 166 }
+  },
+  "lengua-de-suegra": {
+    etapaInicial: "pequena",
+    imagenes: {
+      pequena: "assets/plantas/lengua-de-suegra-pequena.png",
+      mediana: "assets/plantas/lengua-de-suegra-mediana.png",
+      crecida: "assets/plantas/lengua-de-suegra-crecida.png",
+      sed: "assets/plantas/lengua-de-suegra-sed.png",
+      grande: "assets/plantas/lengua-de-suegra-flor.png",
+      marchita: "assets/plantas/lengua-de-suegra-marchita.png"
+    },
+    lienzo: { ancho: 529, anclaX: 276.0, anclaY: 734.5, escala: 0.584, cimaSed: 218 }
   }
 };
 
@@ -2032,7 +2179,7 @@ let alLevantarMacetas = () => {};
 
 // Tiempos del crecimiento (PROVISORIOS, solo para probar; los puedes cambiar)
 const CRECIMIENTO = {
-  duracion: 24000,      // milisegundos desde que se planta hasta que florece (si nunca tuviera sed)
+  duracion: 15000,      // milisegundos desde que se planta hasta que florece (si nunca tuviera sed)
   etapaMediana: 0.5,    // a la mitad del camino el brote pasa a planta mediana
   etapaSed: 0.65,       // un poco después le da sed y se detiene
   marchitarDespues: 90000 // milisegundos que una planta florecida aguanta antes de secarse otra vez
@@ -2061,13 +2208,16 @@ function esDelTutorial(maceta) {
   return maceta === MACETAS[0] && maceta.especie === "manzanilla" && !estado.tutorialTerminado;
 }
 
+const ESPECIES_NUEVAS = ["calle-calle", "pasiflora", "lirio", "lavanda", "malamadre", "salvia-chilena", "lengua-de-suegra"];
+
 // ¿Esta maceta puede recibir ahora este objeto (semilla o saco de tierra)?
 function macetaAcepta(maceta, id) {
   if (id === "saco-tierra") return maceta.sinTierra === true;
   if (id === "semillas-manzanilla") return estado.puedePlantar && maceta === MACETAS[0] && !maceta.especie;
   if (id === "semillas-rosa") return estado.tutorialTerminado && maceta === MACETAS[1] && !maceta.especie;
   // La pasiflora va en las macetas nuevas, ya con tierra
-  if (id === "semillas-pasiflora") return estado.tiendaAmpliada && maceta.extra === true && !maceta.sinTierra && !maceta.especie;
+  // Todas las demás plantas van en las macetas nuevas, ya con tierra
+  if (ESPECIES_NUEVAS.includes(id.replace("semillas-", ""))) return estado.tiendaAmpliada && maceta.extra === true && !maceta.sinTierra && !maceta.especie;
   return false;
 }
 
@@ -2162,9 +2312,20 @@ function avanzarCrecimiento() {
   });
 }
 
+// En las macetas nuevas la gota se pone justo encima de la punta de la planta (así no tapa capullos ni flores)
+function ubicarGota(maceta) {
+  if (!maceta.extra) return;
+  const lienzo = ESPECIES[maceta.especie].lienzo;
+  if (lienzo.cimaSed === undefined) return;
+  const px = ESCALA_CQW * lienzo.escala;
+  const cima = maceta.y - (lienzo.anclaY - lienzo.cimaSed) * px;   // y de la punta de la planta, en cqw
+  maceta.gota.style.top = Math.max(0.5, cima - 5.6).toFixed(2) + "cqw";
+}
+
 function darSed(maceta) {
   maceta.pausada = true;
   mostrarPlanta(maceta, "sed");
+  ubicarGota(maceta);
   maceta.gota.hidden = false;
   dibujarBarra(maceta);
   actualizarZonas();
@@ -2183,6 +2344,7 @@ function darSed(maceta) {
 
 function marchitar(maceta) {
   mostrarPlanta(maceta, "marchita");
+  ubicarGota(maceta);
   maceta.gota.hidden = false;
   actualizarZonas();
 }
@@ -2271,6 +2433,8 @@ function plantar(maceta, semillaId) {
   estado.inventario[semillaId] = Math.max(0, (estado.inventario[semillaId] || 0) - 1);
 
   maceta.especie = semillaId.replace("semillas-", "");
+  estado.plantasPlantadas++;
+  if (estado.plantasPlantadas === 3) setTimeout(iniciarEventoChinita, CHINITA.esperaTrasPlantar * 1000);   // la 3ª planta atrae a la chinita
   if (!estado.especiesPlantadas.includes(maceta.especie)) estado.especiesPlantadas.push(maceta.especie);
   maceta.progreso = 0;
   maceta.pausada = false;
@@ -2521,7 +2685,8 @@ function regar(maceta) {
     maceta.hastaMarchitar = CRECIMIENTO.marchitarDespues;
     mostrarPlanta(maceta, "grande");
   } else {
-    mostrarPlanta(maceta, "mediana");
+    // Tras regar vuelve a crecer: usa la etapa "crecida" si la planta la tiene
+    mostrarPlanta(maceta, ESPECIES[maceta.especie].imagenes.crecida ? "crecida" : "mediana");
     dibujarBarra(maceta);
   }
 
@@ -2725,10 +2890,14 @@ function ponerGuia(quien) {
   const capas = document.querySelector("#guia .guia-capas");
   const nombre = document.querySelector("#guia .globo-nombre");
   const esAbejorro = quien === "abejorro";
+  const esChinita = quien === "chinita";
   guia.classList.toggle("es-abejorro", esAbejorro);
+  guia.classList.toggle("es-chinita", esChinita);
   capas.classList.toggle("capas-abejorro", esAbejorro);
-  nombre.textContent = esAbejorro ? "Abejorro colorado" : "Pololo verde";
+  capas.classList.toggle("capas-chinita", esChinita);
+  nombre.textContent = esAbejorro ? "Abejorro colorado" : esChinita ? "Chinita chilena" : "Pololo verde";
   if (esAbejorro) capas.replaceChildren(...capasAbejorro());
+  else if (esChinita) capas.replaceChildren(...capasChinita());
   else capas.innerHTML = capasPololoOriginales;
 }
 
@@ -2917,7 +3086,7 @@ abejorroBoton.addEventListener("click", () => {
 // Cuando el pololo grande aparece a hablar, el pequeñito que vuela al fondo desaparece;
 // al despedirse, el pequeñito vuelve a verse
 function revisarPoloDelFondo() {
-  poloEnGuia = !guia.hidden && !guia.classList.contains("es-abejorro");
+  poloEnGuia = !guia.hidden && !guia.classList.contains("es-abejorro") && !guia.classList.contains("es-chinita");
   poloVuelo.classList.toggle("oculto-guia", poloEnGuia);
 }
 new MutationObserver(revisarPoloDelFondo).observe(guia, { attributes: true, attributeFilter: ["hidden", "class"] });
@@ -2970,3 +3139,408 @@ poloVuelo.addEventListener("click", () => {
 
 // Un clic sobre la versión "de frente" del abejorro cuenta como clic en el abejorro
 abejorroEl.querySelector(".vuelo-frente").addEventListener("click", () => abejorroBoton.click());
+
+
+// ---------- Mini juego: círculos de luz mientras las plantas crecen ----------
+// Aparece un círculo en el piso del balcón con un aro de luz que se va cerrando.
+// Si haces clic justo cuando el aro llega al centro, a las plantas que están creciendo
+// les faltan 1 segundo menos para terminar. De vez en cuando aparece una hojita: un clic = +1 BP.
+const MINIJUEGO_ACTIVO = false;   // pásalo a true para probar el mini juego de círculos (aún en ideas)
+const RITMO = {
+  cadaMin: 1.8,        // segundos mínimos entre un círculo y el siguiente
+  cadaMax: 3.2,        // segundos máximos
+  duracionAro: 1.3,    // segundos que tarda el aro en llegar al centro (más alto = más fácil)
+  margenAntes: 0.3,    // segundos antes del centro en que todavía vale el clic
+  margenDespues: 0.2,  // segundos después del centro en que todavía vale el clic
+  restaSegundos: 1,    // segundos que se restan al crecimiento por cada acierto
+  probHoja: 0.12,      // probabilidad (0 a 1) de que en vez de un círculo salga una hojita de BP
+  vidaHoja: 4.5,       // segundos que la hojita se queda en pantalla
+  maxEnPantalla: 2,    // cuántos círculos pueden estar a la vez
+  zona: { xMin: 22, xMax: 78, yMin: 35, yMax: 46 }   // dónde aparecen (en cqw)
+};
+
+let ritmoActivos = 0;
+let ritmoPrimeraVez = true;   // la primera vez se muestra una pista
+
+function ritmoPuedeJugar() {
+  if (!MINIJUEGO_ACTIVO) return false;
+  if (document.hidden || !estado.tutorialTerminado) return false;
+  if (!guia.hidden || !tienda.hidden || !fichaCapa.hidden || !encicloPanel.hidden || !panelConfig.hidden) return false;
+  if (escena.offsetParent === null) return false;
+  return MACETAS.some(plantaCreciendo);
+}
+
+function plantaCreciendo(maceta) {
+  return Boolean(maceta.especie) && !maceta.pausada && !maceta.terminada && maceta.progreso < 1;
+}
+
+function ritmoPosicion() {
+  const z = RITMO.zona;
+  return {
+    x: z.xMin + Math.random() * (z.xMax - z.xMin),
+    y: z.yMin + Math.random() * (z.yMax - z.yMin)
+  };
+}
+
+function ritmoAviso(texto, x, y, clase) {
+  const aviso = document.createElement("div");
+  aviso.className = "ritmo-aviso " + (clase || "");
+  aviso.textContent = texto;
+  aviso.style.left = x + "cqw";
+  aviso.style.top = (y - 6) + "cqw";
+  escena.appendChild(aviso);
+  setTimeout(() => aviso.remove(), 1200);
+}
+
+// Adelanta el crecimiento de todas las plantas que están creciendo
+function adelantarCrecimiento(segundos) {
+  const paso = (segundos * 1000) / CRECIMIENTO.duracion;
+  MACETAS.forEach((maceta) => {
+    if (!plantaCreciendo(maceta)) return;
+    // Sin regar, nunca pasa de la etapa de sed (así no se salta el riego)
+    const techo = maceta.regada ? 1 : CRECIMIENTO.etapaSed - 0.005;
+    maceta.progreso = Math.min(techo, maceta.progreso + paso);
+    dibujarBarra(maceta);
+  });
+}
+
+function ritmoCrearCirculo() {
+  const { x, y } = ritmoPosicion();
+  const inicio = performance.now();
+  const punto = document.createElement("button");
+  punto.type = "button";
+  punto.className = "ritmo-punto";
+  punto.style.left = x + "cqw";
+  punto.style.top = y + "cqw";
+  punto.setAttribute("data-sin-clic", "");
+  punto.setAttribute("aria-label", "Círculo de luz: haz clic cuando el aro llegue al centro");
+  const aro = document.createElement("span");
+  aro.className = "ritmo-aro";
+  aro.style.animationDuration = RITMO.duracionAro + "s";
+  punto.appendChild(aro);
+  if (ritmoPrimeraVez) {
+    const pista = document.createElement("span");
+    pista.className = "ritmo-pista";
+    pista.textContent = "Clic cuando el aro llegue al centro";
+    punto.appendChild(pista);
+  }
+  escena.appendChild(punto);
+  ritmoActivos++;
+
+  let resuelto = false;
+  const cerrar = (clase) => {
+    if (resuelto) return;
+    resuelto = true;
+    ritmoActivos--;
+    punto.classList.add(clase);
+    setTimeout(() => punto.remove(), 450);
+  };
+
+  punto.addEventListener("click", () => {
+    if (resuelto) return;
+    const t = (performance.now() - inicio) / 1000;
+    const bien = t >= RITMO.duracionAro - RITMO.margenAntes && t <= RITMO.duracionAro + RITMO.margenDespues;
+    if (bien) {
+      ritmoPrimeraVez = false;
+      adelantarCrecimiento(RITMO.restaSegundos);
+      sonarPlop();
+      ritmoAviso("-" + RITMO.restaSegundos + " s", x, y, "bien");
+      cerrar("acierto");
+    } else {
+      cerrar("fallo");
+    }
+  });
+  setTimeout(() => cerrar("fallo"), (RITMO.duracionAro + RITMO.margenDespues + 0.15) * 1000);
+}
+
+function ritmoCrearHoja() {
+  const { x, y } = ritmoPosicion();
+  const hoja = document.createElement("button");
+  hoja.type = "button";
+  hoja.className = "ritmo-hoja";
+  hoja.style.left = x + "cqw";
+  hoja.style.top = y + "cqw";
+  hoja.setAttribute("data-sin-clic", "");
+  hoja.setAttribute("aria-label", "Hojita de BichiPesos: haz clic para ganar 1 BP");
+  hoja.innerHTML = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 34C6 16 16 6 34 6c0 18-10 28-28 28Z" fill="#8DAD4E" stroke="#36600C" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 32C16 24 22 18 30 10" fill="none" stroke="#36600C" stroke-width="2.5" stroke-linecap="round"/></svg><span>+1</span>';
+  escena.appendChild(hoja);
+  ritmoActivos++;
+  let resuelta = false;
+  const cerrar = (clase) => {
+    if (resuelta) return;
+    resuelta = true;
+    ritmoActivos--;
+    hoja.classList.add(clase);
+    setTimeout(() => hoja.remove(), 450);
+  };
+  hoja.addEventListener("click", () => {
+    if (resuelta) return;
+    estado.monedas += 1;
+    mostrarMonedas();
+    animarSaldo(1);
+    sonarPlop();
+    cerrar("acierto");
+  });
+  setTimeout(() => cerrar("fallo"), RITMO.vidaHoja * 1000);
+}
+
+function ritmoSiguiente() {
+  if (ritmoPuedeJugar() && ritmoActivos < RITMO.maxEnPantalla) {
+    if (Math.random() < RITMO.probHoja) ritmoCrearHoja();
+    else ritmoCrearCirculo();
+  }
+  const espera = RITMO.cadaMin + Math.random() * (RITMO.cadaMax - RITMO.cadaMin);
+  setTimeout(ritmoSiguiente, espera * 1000);
+}
+setTimeout(ritmoSiguiente, 4000);
+
+
+// ---------- A veces, un insecto apretado suelta 1 BP ----------
+const PROB_BP_INSECTO = 0.005;  // probabilidad (0 a 1) de que un clic sobre un insecto suelte 1 BP (0.005 = 0,5%)
+
+function soltarBPDesde(elemento) {
+  if (!estado.tutorialTerminado || Math.random() >= PROB_BP_INSECTO) return;
+  const r = elemento.getBoundingClientRect();
+  const e = escena.getBoundingClientRect();
+  const x = ((r.left + r.width / 2) - e.left) / e.width * 100;
+  const y = ((r.top + r.height / 2) - e.top) / e.width * 100;
+  const moneda = document.createElement("img");
+  moneda.src = "assets/iconos/icono-bichipeso.png";
+  moneda.alt = "";
+  moneda.className = "bp-cae";
+  moneda.style.left = x + "cqw";
+  moneda.style.top = y + "cqw";
+  escena.appendChild(moneda);
+  setTimeout(() => moneda.remove(), 1300);
+  ritmoAviso("+1 BP", x, y - 2, "bien");
+  estado.monedas += 1;
+  mostrarMonedas();
+  animarSaldo(1);
+}
+poloVuelo.addEventListener("click", () => soltarBPDesde(poloVuelo));
+abejorroBoton.addEventListener("click", () => { if (abejorro.fase === "libre") soltarBPDesde(abejorroEl); });
+
+// ---------- Chinita chilena ----------
+// Al plantar la tercera planta (cualquiera): se oye un zumbido suave, la chinita entra volando
+// y aparece. Hay que hacerle clic para que se presente.
+const chinitaEl = document.getElementById("chinita-vuelo");
+const chinitaVoltea = document.getElementById("chinita-voltea");
+const chinitaBoton = document.getElementById("chinita-boton");
+
+// Ajustes que puedes cambiar (distancias en cqw, tiempos en segundos)
+const CHINITA = {
+  velocidad: 4.5,        // qué tan rápido vuela (más alto = más rápido)
+  alturaMin: 20,
+  alturaMax: 38,
+  ondulacion: 3.5,
+  periodo: 6,
+  margen: 11,            // qué tanto sale de la pantalla antes de desaparecer
+  distanciaInicial: 80,  // desde qué tan lejos (fuera de la pantalla) empieza a acercarse
+  volumenLejano: 0.2,    // volumen del zumbido cuando aún está muy lejos (0 a 1)
+  esperaTrasPlantar: 6,  // segundos entre que se planta la tercera planta y empieza a oírse su zumbido
+  descansoMin: 2,
+  descansoMax: 5,
+  paradaProb: 0.2,       // probabilidad (0 a 1) de que en una pasada se detenga a mostrarse de frente
+  paradaMin: 3,
+  paradaMax: 5
+};
+
+const chinita = {
+  fase: "inactivo",      // inactivo, oculto, visible, charla, libre
+  direccion: -1,
+  x: 0,
+  alturaBase: 24,
+  fasePeriodo: 0,
+  tiempo: 0,
+  descanso: 0,
+  ultimo: 0,
+  puntoParada: null,
+  parada: 0
+};
+
+function ponerChinita(x, y, angulo) {
+  chinitaEl.style.transform =
+    "translate(" + x.toFixed(2) + "cqw, " + y.toFixed(2) + "cqw) rotate(" + angulo.toFixed(1) + "deg)";
+}
+
+// Volumen del zumbido: 0 a 1 según qué tan cerca está
+function sonarChinita(cercania) {
+  if (!sonidoPermitido || cercania === null) {
+    if (!sonidoChinita.paused) sonidoChinita.pause();
+    return;
+  }
+  const volumen = Math.min(1, ajustes.volumenAleteo * GANANCIA_CHINITA * cercania);
+  sonidoChinita.volume = volumen;
+  if (volumen > 0.003) {
+    if (sonidoChinita.paused) sonidoChinita.play().catch(() => {});
+  } else if (!sonidoChinita.paused) {
+    sonidoChinita.pause();
+  }
+}
+
+function mostrarChinita(clicable) {
+  chinitaEl.classList.add("visible");
+  chinitaEl.classList.toggle("clicable", clicable);
+  chinitaBoton.disabled = !(clicable || chinita.fase === "libre");
+}
+
+function volarChinita(ahora) {
+  if (chinita.fase === "inactivo") return;
+  requestAnimationFrame(volarChinita);
+  const pasado = Math.min((ahora - chinita.ultimo) / 1000, 0.1);
+  chinita.ultimo = ahora;
+
+  // Mientras charla con el jugador, se queda quieto (y casi no se oye)
+  if (chinita.fase === "charla") {
+    sonarChinita(0.25);
+    return;
+  }
+
+  // Para quien prefiere menos movimiento: el chinita se queda parado en un lugar visible
+  if (prefiereQuietud && (chinita.fase === "visible" || chinita.fase === "libre")) {
+    ponerChinita(58, 22, 0);
+    mostrarChinita(chinita.fase === "visible");
+    sonarChinita(0.4);
+    return;
+  }
+
+  // Descansando fuera de la pantalla entre una pasada y otra
+  if (chinita.descanso > 0) {
+    sonarChinita(null);
+    chinita.descanso -= pasado;
+    if (chinita.descanso <= 0) nuevaPasadaChinita();
+    return;
+  }
+
+  // Cuánto ha entrado en la zona visible (negativo = todavía está fuera de la pantalla)
+  const adentro = chinita.direccion < 0 ? (100 + CHINITA.margen) - chinita.x : chinita.x + CHINITA.margen;
+  const esperando = chinita.fase === "oculto" && !guia.hidden && adentro > -25;
+  if (chinita.parada > 0) {
+    // Detenido, mostrándose de frente
+    chinita.tiempo += pasado;
+    chinita.parada -= pasado;
+    if (chinita.parada <= 0) chinitaEl.classList.remove("de-frente");
+  } else if (!esperando) {
+    chinita.tiempo += pasado;
+    chinita.x += chinita.direccion * CHINITA.velocidad * pasado;
+    if (chinita.puntoParada !== null && chinita.fase === "libre") {
+      const llego = chinita.direccion > 0 ? chinita.x >= chinita.puntoParada : chinita.x <= chinita.puntoParada;
+      if (llego) {
+        chinita.puntoParada = null;
+        chinita.parada = numeroEntre(CHINITA.paradaMin, CHINITA.paradaMax);
+        chinitaEl.classList.add("de-frente");
+      }
+    }
+  }
+
+  // Sube y baja suavemente, como el pololo
+  const frecuencia = (Math.PI * 2) / CHINITA.periodo;
+  const fase = frecuencia * chinita.tiempo + chinita.fasePeriodo;
+  const y = chinita.alturaBase + CHINITA.ondulacion * Math.sin(fase);
+  const pendiente = CHINITA.ondulacion * frecuencia * Math.cos(fase) / CHINITA.velocidad;
+  const angulo = chinita.parada > 0 ? 0 : Math.max(-12, Math.min(12, chinita.direccion * Math.atan(pendiente) * 180 / Math.PI));
+  ponerChinita(chinita.x, y, angulo);
+
+  // Volumen según la distancia a la pantalla
+  const fuera = chinita.x < 0 ? -chinita.x : (chinita.x > 100 ? chinita.x - 100 : 0);
+  if (chinita.fase === "oculto") {
+    const lejos = Math.min(1, fuera / (CHINITA.margen + CHINITA.distanciaInicial));
+    sonarChinita(CHINITA.volumenLejano + (1 - CHINITA.volumenLejano) * (1 - lejos));
+  } else {
+    sonarChinita(Math.max(0, 1 - fuera / CHINITA.margen));
+  }
+
+  // Llegó al borde de la pantalla: por fin aparece volando
+  if (chinita.fase === "oculto" && adentro >= 0) {
+    chinita.fase = "visible";
+    mostrarChinita(true);
+    ponerMision(null);   // sin pista: que la persona lo descubra sola
+  }
+
+  const salioDerecha = chinita.direccion > 0 && chinita.x > 100 + CHINITA.margen;
+  const salioIzquierda = chinita.direccion < 0 && chinita.x < -CHINITA.margen;
+  if ((chinita.fase === "visible" || chinita.fase === "libre") && (salioDerecha || salioIzquierda)) {
+    chinita.descanso = numeroEntre(CHINITA.descansoMin, CHINITA.descansoMax);
+  }
+}
+
+function nuevaPasadaChinita() {
+  if (Math.random() < 0.35) chinita.direccion *= -1;
+  chinita.alturaBase = numeroEntre(CHINITA.alturaMin, CHINITA.alturaMax);
+  chinita.fasePeriodo = numeroEntre(0, Math.PI * 2);
+  chinita.tiempo = 0;
+  chinita.x = chinita.direccion > 0 ? -CHINITA.margen : 100 + CHINITA.margen;
+  chinita.puntoParada = (chinita.fase === "libre" && !prefiereQuietud && Math.random() < CHINITA.paradaProb) ? numeroEntre(22, 78) : null;
+  chinitaVoltea.classList.toggle("izquierda", chinita.direccion < 0);
+  // Desde la segunda pasada vuelve a verse (ya fuera de la pantalla, sin saltos)
+  if (chinita.fase === "libre") mostrarChinita(false);
+}
+
+// La chinita llega sola: no hace falta que nadie la anuncie
+const PASOS_CHINITA = [
+  { texto: "¡Holi! Me descubriste en tu terraza, ¡muy bien! Tus flores son muy lindas..." },
+  { texto: "Decidido, ¡aquí me quedaré!" }
+];
+
+function iniciarEventoChinita() {
+  if (chinita.fase !== "inactivo" || estado.chinitaListo) return;
+  chinita.fase = "oculto";
+  chinita.direccion = Math.random() < 0.5 ? -1 : 1;
+  chinita.x = chinita.direccion < 0
+    ? 100 + CHINITA.margen + CHINITA.distanciaInicial
+    : -CHINITA.margen - CHINITA.distanciaInicial;
+  chinita.alturaBase = numeroEntre(CHINITA.alturaMin, CHINITA.alturaMax);
+  chinita.fasePeriodo = numeroEntre(0, Math.PI * 2);
+  chinita.tiempo = 0;
+  chinitaVoltea.classList.toggle("izquierda", chinita.direccion < 0);
+  chinitaEl.hidden = false;
+  chinita.ultimo = performance.now();
+  requestAnimationFrame(volarChinita);
+}
+
+// Clic sobre la chinita
+const sonidoChinitaApretada = new Audio("assets/sonidos/chinita-apretada.mp3");
+sonidoChinitaApretada.preload = "auto";
+let temporizadorApreton3 = null;
+
+chinitaBoton.addEventListener("click", () => {
+  if (chinita.fase === "libre") {
+    // Ya es amiga: al hacerle clic se "aprieta" y suena
+    sonidoChinitaApretada.volume = ajustes.volumenBotones;
+    sonidoChinitaApretada.currentTime = 0;
+    sonidoChinitaApretada.play().catch(() => {});
+    chinitaEl.classList.remove("apretado");
+    void chinitaEl.offsetWidth;
+    chinitaEl.classList.add("apretado");
+    clearTimeout(temporizadorApreton3);
+    temporizadorApreton3 = setTimeout(() => chinitaEl.classList.remove("apretado"), 450);
+    soltarBPDesde(chinitaEl);
+    return;
+  }
+  if (chinita.fase !== "visible") return;
+  chinita.fase = "charla";
+  chinitaEl.classList.remove("de-frente");
+  chinitaEl.classList.add("sin-fade");
+  chinitaEl.classList.remove("visible", "clicable");
+  chinitaBoton.disabled = true;
+  chinitaEl.classList.remove("apretable");
+  setTimeout(() => chinitaEl.classList.remove("sin-fade"), 100);
+  quitarResaltado();
+  ponerGuia("chinita");
+  iniciarSecuencia(PASOS_CHINITA, () => {
+    ponerGuia("pololo");
+    estado.chinitaListo = true;
+    // Se queda por la terraza (arranca fuera de la pantalla)
+    chinita.fase = "libre";
+    chinita.descanso = 2;
+    chinita.direccion = Math.random() < 0.5 ? -1 : 1;
+    chinitaBoton.disabled = false;
+    chinitaEl.classList.add("apretable");
+    // El diario se ilumina: ahí aparece el nuevo descubrimiento
+    descubrirInsecto("chinita");
+  });
+});
+
+// Un clic sobre la versión "de frente" de la chinita cuenta como clic en la chinita
+chinitaEl.appendChild(crearFrenteVuelo(capasChinita(), "capas-chinita"));
+chinitaEl.querySelector(".vuelo-frente").addEventListener("click", () => chinitaBoton.click());

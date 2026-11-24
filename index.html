@@ -176,6 +176,7 @@
             <div class="ficha-mapa" id="ficha-mapa"></div>
             <span class="mapa-punto">Sur</span>
           </div>
+          <p class="ficha-fuente" id="ficha-fuente" hidden></p>
           <button class="ficha-cerrar" id="ficha-cerrar" aria-label="Cerrar información">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#6F513A" stroke-width="3" stroke-linecap="round"/>
@@ -319,6 +320,15 @@
         <button class="abejorro-boton" id="abejorro-boton" type="button" data-sin-clic aria-label="Abejorro colorado: haz clic para saludarlo">
           <div class="vuelo-voltea" id="abejorro-voltea">
             <img src="assets/abejorro/abejorro-vuelo.png" alt="" draggable="false">
+          </div>
+        </button>
+      </div>
+
+      <!-- Chinita chilena volando: aparece cuando se planta la tercera planta y se le puede hacer clic -->
+      <div class="pololo-vuelo abejorro-vuelo chinita-vuelo" id="chinita-vuelo" hidden>
+        <button class="abejorro-boton" id="chinita-boton" type="button" data-sin-clic aria-label="Chinita chilena: haz clic para saludarla">
+          <div class="vuelo-voltea" id="chinita-voltea">
+            <img src="assets/chinita/chinita-vuelo.png" alt="" draggable="false">
           </div>
         </button>
       </div>
